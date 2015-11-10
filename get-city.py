@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import os
-import urllib, json
+import os, urllib, json, time
 
 idGH = os.environ.get('GH_ID')
 secretGH = os.environ.get('GH_SECRET')
@@ -37,8 +36,12 @@ def read_API(url):
 
     if "message" in data:
         print("API MESSAGE: "+data["message"])
-        if "API rate limit exceeded for" in data["message"]:
-            exit()
+        while "message" in data:
+            print("Waiting 1 minute...")
+            time.sleep(60)
+            response = urllib.urlopen(url)
+            data = json.loads(response.read())
+
     return data
 
 
@@ -65,17 +68,17 @@ def getUsers(city):
     else:
         repos_limit = 999999999
 
-
+        sign="<"
 
         while len(users)<total_users:
             while more and page<=10:
                 url = "https://api.github.com/search/users?client_id="+idGH+"&client_secret="+secretGH+ \
-                    "&q=sort:repositories+type:user+repos:<"+str(repos_limit)+"+location:"+city+"&per_page=100&page="+str(page)
+                    "&q=sort:repositories+type:user+repos:"+sign+str(repos_limit)+"+location:"+city+"&per_page=100&page="+str(page)
                 data = read_API(url)
 
                 print(url)
                 if len(data['items'])>0:
-                    users+= data['items']
+                    addUsers(data['items'])
                     page += 1
                 else:
                     more = False
@@ -87,7 +90,9 @@ def getUsers(city):
             if len(users)<total_users:
                 response = urllib.urlopen(users[len(users)-1]["repos_url"]+"?client_id="+idGH+"&client_secret="+secretGH)
                 data = json.loads(response.read().decode('utf-8'))
-                repos_limit=len(data)+1
+                repos_limit=len(data)
+                if repos_limit==0:
+                    sign=""
                 more=True
                 page=1
         return users
@@ -98,5 +103,8 @@ def getUsers(city):
 users=getUsers("Barcelona")
 print(len(users))
 
-
-
+target = open("nombre", 'w')
+for i in users:
+    target.write(i)
+    target.write("\n")
+target.close()
