@@ -36,20 +36,22 @@ def addUsers(new_users):
 
 def read_API(url):
     code = 0
-    hdr = {'User-Agent': 'curl/7.24.0 (x86_64-ubuntu) libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5 gh-rankings-grx',
+    hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
     'Accept': 'application/vnd.github.v3.text-match+json'
     }
     while code !=200:
         req = urllib.request.Request(url,headers=hdr)
         try:
             response = urllib.request.urlopen(req)
+            code = response.code
         except urllib.error.URLError as e:
             print(e.reason)
             print(e.code)
             print(e.read())
             print("Waiting...")
-            time.sleep(120)
+            time.sleep(60)
             code = e.code
+
 
     data = json.loads(response.read().decode('utf-8'))
 
@@ -148,7 +150,7 @@ def getUsers(city):
                 URL_reposuser=data['items'][len(data['items'])-1]["repos_url"]+\
                     "?client_id="+idGH+"&client_secret="+secretGH
 
-                response = urllib.urlopen(URL_reposuser)
+                response = urllib.request.urlopen(URL_reposuser)
                 data = json.loads(response.read().decode('utf-8'))
                 repos_limit=len(data)
                 more=True
@@ -159,6 +161,6 @@ def getUsers(city):
 
 
 
-users=getUsers("Barcelona")
+getUsers("Barcelona")
 print(len(users))
 
