@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import os,  json, time
 import urllib.request
+from urllib.error import HTTPError
 
 idGH = os.environ.get('GH_ID')
 secretGH = os.environ.get('GH_SECRET')
@@ -34,23 +35,25 @@ def addUsers(new_users):
 
 
 def read_API(url):
-    hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
-       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-       'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-       'Accept-Encoding': 'none',
-       'Accept-Language': 'en-US,en;q=0.8',
-       'Connection': 'keep-alive'}
     code = 0
-
+    hdr = {'User-Agent': 'curl/7.24.0 (x86_64-ubuntu) libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5 gh-rankings-grx',
+    'Accept': 'application/vnd.github.v3.text-match+json'
+    }
     while code !=200:
         req = urllib.request.Request(url,headers=hdr)
-
-        response = urllib.request.urlopen(req)
-        code = response.code
-        print("Server says: "+str(code))
+        try:
+            response = urllib.request.urlopen(req)
+        except urllib.error.URLError as e:
+            print(e.reason)
+            print(e.code)
+            print(e.read())
+            print("Waiting...")
+            time.sleep(120)
+            code = e.code
 
     data = json.loads(response.read().decode('utf-8'))
 
+    '''
     if "message" in data:
         print("API MESSAGE: "+data["message"])
         while "message" in data:
@@ -58,7 +61,7 @@ def read_API(url):
             time.sleep(30)
             response = urllib.urlopen(url)
             data = json.loads(response.read())
-
+    '''
     return data
 
 
