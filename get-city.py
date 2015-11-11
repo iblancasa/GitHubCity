@@ -11,8 +11,8 @@ names = []
 
 def getSizeCity(city):
     url = "https://api.github.com/search/users?client_id="+idGH+"&client_secret="+secretGH+ \
-        "&q=sort:followers+type:user+location:"+city
-
+        "&q=repos:1..999999999+type:user+location:"+city
+    print("size   "+url)
     response = urllib.urlopen(url)
     data = json.loads(response.read())
     return data['total_count']
@@ -23,11 +23,14 @@ def getSizeCity(city):
 def addUsers(new_users):
     global users
     global names
+    repeat = 0
     for user in new_users:
         if not user["login"] in names:
             users.append(user)
             names.append(user["login"])
-
+        else:
+            repeat+=1
+    return len(new_users)-repeat
 
 
 def read_API(url):
@@ -37,8 +40,8 @@ def read_API(url):
     if "message" in data:
         print("API MESSAGE: "+data["message"])
         while "message" in data:
-            print("Waiting 1 minute...")
-            time.sleep(60)
+            print("Waiting 30 seconds...")
+            time.sleep(30)
             response = urllib.urlopen(url)
             data = json.loads(response.read())
 
@@ -68,34 +71,35 @@ def getUsers(city):
     else:
         repos_limit = 999999999
 
-        sign="<"
-
         while len(users)<total_users:
             while more and page<=10:
                 url = "https://api.github.com/search/users?client_id="+idGH+"&client_secret="+secretGH+ \
-                    "&q=sort:repositories+type:user+repos:"+sign+str(repos_limit)+"+location:"+city+"&per_page=100&page="+str(page)
+                    "&q=sort:repositories+type:user+repos:1.."+str(repos_limit)+"+location:"+city+"&per_page=100&page="+str(page)
                 data = read_API(url)
 
                 print(url)
-                if len(data['items'])>0:
-                    addUsers(data['items'])
-                    page += 1
+                if "items" in data and len(data['items'])>0:
+                    repeat = addUsers(data['items'])
+                    print("REPETIDOS "+str(repeat))
+                    if repeat != len(data['items']) and repeat != 0 and page!=1:
+                        page = 1
+                    else:
+                        page +=1
+
                 else:
                     more = False
                 print("TOTAL USERS "+str(total_users))
                 print("USUARIOS CONTADOS "+str(len(users)))
 
-            print(len(users)<total_users)
-
             if len(users)<total_users:
-                response = urllib.urlopen(users[len(users)-1]["repos_url"]+"?client_id="+idGH+"&client_secret="+secretGH)
+                response = urllib.urlopen(data['items'][len(data['items'])-1]["repos_url"]+"?client_id="+idGH+"&client_secret="+secretGH)
                 data = json.loads(response.read().decode('utf-8'))
                 repos_limit=len(data)
-                if repos_limit==0:
-                    sign=""
                 more=True
                 page=1
-        return users
+
+            if repos_limit==1:
+                #
 
 
 
