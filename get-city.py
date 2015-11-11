@@ -143,8 +143,9 @@ def getUsers(city):
                 print("USUARIOS CONTADOS "+str(len(users)))
 
             if repos_limit==1:
+                repos_limit = 999999999
                 #getZeroUsers()
-                return
+                #return
 
             if len(users)<total_users:
                 URL_reposuser=data['items'][len(data['items'])-1]["repos_url"]+\
