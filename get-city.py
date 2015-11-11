@@ -124,7 +124,7 @@ def getUsers(city):
         repos_limit = 999999999
 
         while len(users)<total_users:
-            while more and page<=10:
+            while more and page<=10 and len(users)<total_users:
                 url = getURL(page,"desc",city,"1.."+str(repos_limit))
                 data = read_API(url)
 
@@ -162,6 +162,6 @@ def getUsers(city):
 
 
 
-getUsers("Barcelona")
+getUsers("Madrid")
 print(len(users))
 
