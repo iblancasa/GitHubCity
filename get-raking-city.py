@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import urllib.request, os, datetime, time
+import urllib.request, os, datetime, time, json
 from urllib.error import HTTPError
 from dateutil.relativedelta import relativedelta
 
@@ -9,10 +9,10 @@ idGH = os.environ.get('GH_ID')
 secretGH = os.environ.get('GH_SECRET')
 
 
-city = "Barcelona"
+city = "Madrid"
 users = []
-
-
+names = []
+calls = 0
 def addUsers(new_users):
     global users
     global names
@@ -22,17 +22,21 @@ def addUsers(new_users):
             users.append(user)
             names.append(user["login"])
         else:
+            print("###ALERTA")
+            print(user["login"])
             repeat+=1
     return len(new_users)-repeat
 
 
 
 def read_API(url):
+    global calls
     code = 0
     hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
     'Accept': 'application/vnd.github.v3.text-match+json'
     }
     while code !=200:
+        calls+=1
         req = urllib.request.Request(url,headers=hdr)
         try:
             response = urllib.request.urlopen(req)
@@ -53,16 +57,15 @@ def read_API(url):
 
 def getURLBigs(page, start_date, final_date):
     url = "https://api.github.com/search/users?client_id="+idGH+"&client_secret="+secretGH+ \
-        "&order=desc&q=sort:joined+type:user+\
-        location:"+city+\
-        "created:"+start_date+".."+final_date+\
+        "&order=desc&q=sort:joined+type:user+location:"+city+ \
+        "+created:"+start_date.strftime("%Y-%m-%d")+\
+        ".."+final_date.strftime("%Y-%m-%d")+\
         "&per_page=100&page="+str(page)
     return url
 
 
 def getPeriod(start, final):
-    start = final
-    start += datetime.timedelta(days=1)
+    start = final + relativedelta(days=+1)
     final = start + relativedelta(months=+1)
     return (start,final)
 
@@ -72,29 +75,30 @@ def getMonthUsers(start_date, final_date):
     print(url)
     data = read_API(url)
 
-
-
     total_count = data["total_count"]
-    addUsers(data['items'])
+    added =addUsers(data['items'])
 
-    if total_count>100:
-        added = 0
-        page = 1
-        total_pages = int(total_count/100)+1
+    page = 1
+    total_pages = int(total_count/100)+1
 
-        while total_count>added:
-            url = getURLBigs(page,start_date,final_date)
-            print(url)
-            data = read_API(url)
-            page+=1
+    print("total users-> "+str(total_count))
+    print("added "+str(added))
 
-            if page==total_pages:
-                page=1
+    while total_count>added:
+        page+=1
+        if page>total_pages:
+            page=1
 
+        url = getURLBigs(page,start_date,final_date)
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print(url)
 
+        data = read_API(url)
 
-            total_count = data["total_count"]
-            added += addUsers(data['items'])
+        total_count = data["total_count"]
+        added += addUsers(data['items'])
+        print(total_count)
+        print(added)
 
 
 
@@ -108,12 +112,14 @@ def getBigCityUsers():
         getMonthUsers(start_date, final_date)
         start_date,final_date = getPeriod(start_date,final_date)
         print(str(start_date)+" -------- "+str(final_date))
+        print("USUARIOS QUE TENGO ---> "+str(len(users)))
         print("#####################################################################")
 
 
 
 getBigCityUsers()
-println(len(users))
+print(len(users))
+print(calls)
 
 
 
