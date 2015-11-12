@@ -60,6 +60,9 @@ def getURL(page,order,city,repositorieslim):
         return url
 
 
+def getURLZero(page,order,city):
+        url = "https://api.github.com/search/users?client_id="+idGH+"&client_secret="+secretGH+ \
+            "&order="+order+"&q=sort:joined+type:user+repos:"+repositorieslim+"+location:"+city+"&per_page=100&page="+str(page)
 
 
 def getsize0users(city):
@@ -144,9 +147,12 @@ def getUsers(city):
 
         while total_users>len(users):
             while added<1000:
+
+
+
                 url = getURL(page,order,city,"0")
                 data = read_API(url)
-
+                print(url)
                 if "items" in data and len(data['items'])>0:
                     old_size = len(users)
                     repeat = addUsers(data['items'])
