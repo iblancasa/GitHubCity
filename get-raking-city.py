@@ -22,8 +22,6 @@ def addUsers(new_users):
             users.append(user)
             names.append(user["login"])
         else:
-            print("###ALERTA")
-            print(user["login"])
             repeat+=1
     return len(new_users)-repeat
 
@@ -42,10 +40,6 @@ def read_API(url):
             response = urllib.request.urlopen(req)
             code = response.code
         except urllib.error.URLError as e:
-            print(e.reason)
-            print(e.code)
-            print(e.read())
-            print("Waiting...")
             time.sleep(60)
             code = e.code
 
@@ -72,7 +66,6 @@ def getPeriod(start, final):
 
 def getMonthUsers(start_date, final_date):
     url = getURLBigs(1,start_date,final_date)
-    print(url)
     data = read_API(url)
 
     total_count = data["total_count"]
@@ -81,24 +74,17 @@ def getMonthUsers(start_date, final_date):
     page = 1
     total_pages = int(total_count/100)+1
 
-    print("total users-> "+str(total_count))
-    print("added "+str(added))
-
     while total_count>added:
         page+=1
         if page>total_pages:
             page=1
 
         url = getURLBigs(page,start_date,final_date)
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        print(url)
 
         data = read_API(url)
 
         total_count = data["total_count"]
         added += addUsers(data['items'])
-        print(total_count)
-        print(added)
 
 
 
@@ -111,9 +97,7 @@ def getBigCityUsers():
     while start_date<today:
         getMonthUsers(start_date, final_date)
         start_date,final_date = getPeriod(start_date,final_date)
-        print(str(start_date)+" -------- "+str(final_date))
-        print("USUARIOS QUE TENGO ---> "+str(len(users)))
-        print("#####################################################################")
+
 
 
 
