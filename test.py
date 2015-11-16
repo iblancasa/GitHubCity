@@ -34,7 +34,7 @@ class TestGitHubCity(unittest.TestCase):
         self.assertEqual(cityA._githubID,os.environ.get('GH_ID'), "GitHub ID was not setting correctly")
         self.assertEqual(cityA._githubSecret,os.environ.get('GH_SECRET'), "GitHub Secret was not setting correctly")
         self.assertNotEqual(cityA._city,"", "City name is an empy str")
-        self.assertIsInstance(cityA._users,list,"Users list was not created")
+        self.assertIsInstance(cityA._names,set,"Users list names was not created")
 
 
         ##########################TESTING METHODS#############
@@ -73,20 +73,16 @@ class TestGitHubCity(unittest.TestCase):
 
         #Testing add user
         added = cityA._addUsers(data["items"])
-        self.assertIsNotNone(cityA._users, "Users in class is None")
-        self.assertEqual(len(cityA._users),data["total_count"], "Users were not saved correctly")
+        self.assertIsNotNone(cityA._names, "Users in class is None")
+        self.assertEqual(len(cityA._names),data["total_count"], "Users were not saved correctly")
         self.assertEqual(added,data["total_count"], "The number of users added is not correct")
 
         added = cityA._addUsers(data["items"])
         self.assertEqual(added,0, "The number of users added when all users are repeated is not correct")
 
-        for i in data["items"]:
-            self.assertEqual(cityA._users.count(i),1, "User "+str(i)+" is repeated")
-
-
         cityB = GitHubCity("Granada",idGH,secretGH)
         cityB._getPeriodUsers(start,finish)
-        self.assertEqual(cityA._users,cityB._users, "Get period is not OK")
+        self.assertEqual(cityA._names,cityB._names, "Get period is not OK")
 
         #Testing getting all users from a city
         cityC = GitHubCity("Granada",idGH,secretGH)
@@ -98,7 +94,7 @@ class TestGitHubCity(unittest.TestCase):
 
         cityC.getCityUsers()
 
-        self.assertEqual(len(cityC._users),data_all["total_count"],"Total users was not calculated correctly")
+        self.assertEqual(len(cityC._names),data_all["total_count"],"Total users was not calculated correctly")
 
 
 

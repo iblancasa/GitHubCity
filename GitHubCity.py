@@ -40,7 +40,7 @@ class GitHubCity:
 
     Attributes:
         _city (str): Name of the city (private).
-        _users (List[dict]): Users from a city (private).
+        _names (set): Name of all users in a city (private)
         _githubID (str): ID of your GitHub application.
         _githubSecret (str): secretGH of your GitHub application.
 
@@ -63,10 +63,9 @@ class GitHubCity:
 
         """
         self._city = city
-        self._users = []
         self._githubID = githubID
         self._githubSecret = githubSecret
-        self._names = []
+        self._names = set()
 
 
 
@@ -88,8 +87,7 @@ class GitHubCity:
         repeat = 0
         for user in new_users:
             if not user["login"] in self._names:
-                self._users.append(user)
-                self._names.append(user["login"])
+                self._names.add(user["login"])
             else:
                 repeat+=1
         return len(new_users)-repeat
@@ -183,7 +181,7 @@ class GitHubCity:
 
         Note:
             This method is private.
-            User's data is added to the private _users attribute.
+            User's names are added to the private _name attribute.
 
         Args:
             start_date (datetime.date): start date of the range to search users.
@@ -232,7 +230,7 @@ class GitHubCity:
         Returns:
             Number (int) of calculated users
         """
-        if len(self._users)==0:
+        if len(self._names)==0:
             return -1
         else:
-            return len(self._users)
+            return len(self._names)
