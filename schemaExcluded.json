@@ -1,0 +1,16 @@
+{
+  "user": {
+    "id": "user",
+    "type": "object",
+    "properties": {
+      "name": {
+        "id": "name",
+        "type": "string"
+      },
+      "reason": {
+        "id": "reason",
+        "type": "string"
+      }
+    }
+  }
+}
