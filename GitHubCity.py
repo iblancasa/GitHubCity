@@ -30,7 +30,7 @@ The MIT License (MIT)
 
 """
 
-import urllib.request, os, datetime, time, json
+import urllib.request, datetime, time, json
 from urllib.error import HTTPError
 from dateutil.relativedelta import relativedelta
 
@@ -62,12 +62,11 @@ class GitHubCity:
             a new instance of GithubCity class
 
         """
-
         self._city = city
         self._users = []
         self._githubID = githubID
         self._githubSecret = githubSecret
-
+        self._names = []
 
 
 
@@ -218,7 +217,6 @@ class GitHubCity:
     def getCityUsers(self):
         """Get all the users from the city.
         """
-        self._names = []
         start_date = datetime.date(2008, 1, 1)
         final_date = datetime.date(2008, 2, 1)
         today = datetime.datetime.now().date()
