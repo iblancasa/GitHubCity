@@ -105,11 +105,3 @@ class TestGitHubCity(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-
-
-#
-#idGH = os.environ.get('GH_ID')
-#secretGH = os.environ.get('GH_SECRET')
-#granada = GitHubCity("Ceuta", idGH, secretGH)
-#print(granada.getTotalUsers())
