@@ -1,9 +1,6 @@
 # GitHubCity
 
 [![Build Status](https://travis-ci.org/iblancasa/GitHubCity.svg?branch=master)](https://travis-ci.org/iblancasa/GitHubCity)
-
-[![GitHub issues](https://img.shields.io/github/issues/badges/shields.svg)](https://github.com/iblancasa/GitHubCity)
-
 [![GitHub license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/iblancasa/GitHubCity)
 
 ## What is this?
