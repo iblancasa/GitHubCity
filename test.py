@@ -41,6 +41,8 @@ class TestGitHubCity(unittest.TestCase):
     def test(self):
         ##########################TESTING KEYS#############
         # Testing GitHub ID
+        print("Testing keys")
+
         idGH = os.environ.get('GH_ID')
         self.assertIsNotNone(idGH, "GitHub ID is None")
         self.assertIsInstance(idGH, str, "GitHub ID is not a str")
@@ -52,8 +54,12 @@ class TestGitHubCity(unittest.TestCase):
         self.assertIsInstance(secretGH, str, "GitHub Secret is not a str")
         self.assertNotEqual(secretGH, "", "GitHub ID is an empty str")
 
+        print("Testing keys: OK")
+
         ##########################TESTING CLASS#############
         # Testing creation and initialization of the class
+        print("Testing class")
+
         cityA = GitHubCity("Granada", idGH, secretGH)
         self.assertIsNotNone(cityA, "City was not created")
         self.assertIsNotNone(cityA._city, "City name was not setting")
@@ -68,8 +74,12 @@ class TestGitHubCity(unittest.TestCase):
         self.assertIsInstance(
             cityA._names, set, "Users list names was not created")
 
+        print("Testing class: OK")
+
         ##########################TESTING METHODS#############
         # Testing period calculation
+        print("Testing methods")
+        print("Period calculation")
         start = datetime.date(2015, 1, 1)
         finish = datetime.date(2015, 2, 1)
         start_result, final_result = cityA._getPeriod(start, finish)
@@ -84,6 +94,7 @@ class TestGitHubCity(unittest.TestCase):
                          "Finish date and start result \ date must be differenced in one day")
 
         # Testing URL composition
+        print("URL Composition")
         url = cityA._getURL(1, start, finish)
         expected_url = "https://api.github.com/search/users?client_id=" +\
             cityA._githubID + "&client_secret=" + cityA._githubSecret + "&order=desc&q=sort:joined+" +\
@@ -95,12 +106,14 @@ class TestGitHubCity(unittest.TestCase):
                          "URL is not well formed")
 
         # Testing read API
+        print("Read API")
         data = cityA._read_API(url)
         self.assertIsNotNone(data, "Data received from API is None")
         self.assertEqual(data["total_count"], 16, "Total_count is not correct")
         self.assertEqual(len(data["items"]), 16, "Items are not correct")
 
         # Testing add user
+        print("Add user")
         added = cityA._addUsers(data["items"])
         self.assertIsNotNone(cityA._names, "Users in class is None")
         self.assertEqual(len(cityA._names), data[
@@ -117,6 +130,7 @@ class TestGitHubCity(unittest.TestCase):
         self.assertEqual(cityA._names, cityB._names, "Get period is not OK")
 
         # Testing getting all users from a city
+        print("Getting all users from a city")
         cityC = GitHubCity("Granada", idGH, secretGH)
         url_all = "https://api.github.com/search/users?client_id=" + \
             idGH + "&client_secret=" + secretGH + \
@@ -128,6 +142,7 @@ class TestGitHubCity(unittest.TestCase):
                          "total_count"], "Total users was not calculated correctly")
 
         # Texting exclude users
+        print("Exclude users")
         dataExclude = [
             {
                 "login": "asdpokjdf",
@@ -180,7 +195,7 @@ class TestGitHubCity(unittest.TestCase):
                       "Add new user was no completed correctly when there is an excluded list")
         self.assertNotIn("asdpokjdf", cityD._names,
                          "User was added to the users list and he is in excluded list")
-
+        print("Testing methods: OK")
 
 if __name__ == '__main__':
     unittest.main()
