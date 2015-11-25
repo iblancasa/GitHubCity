@@ -1,5 +1,11 @@
 # GitHubCity
 
+[![Build Status](https://travis-ci.org/iblancasa/GitHubCity.svg?branch=master)](https://travis-ci.org/iblancasa/GitHubCity)
+
+[![GitHub issues](https://img.shields.io/github/issues/badges/shields.svg)](https://github.com/iblancasa/GitHubCity)
+
+[![GitHub license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/iblancasa/GitHubCity)
+
 ## What is this?
 This is a small library which gets all GitHub users given a city. Original idea is [Top-GitHub-Users-Data](https://github.com/JJ/top-github-users-data) by [@JJ](https://github.com/JJ), an adaptation of [top-github-users](https://github.com/paulmillr/top-github-users) from [@paulmillr](https://github.com/paulmillr/).
 
