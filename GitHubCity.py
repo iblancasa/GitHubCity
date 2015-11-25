@@ -65,9 +65,22 @@ class GitHubCity:
             a new instance of GithubCity class
 
         """
+        if type(city)!="str":
+            raise Exception("City is not a str")
         self._city = city
+
+        if githubID==None:
+            raise Exception("No GitHub ID inserted")
+        if type(githubID)!=str:
+            raise Exception("No GitHub ID is not a str")
         self._githubID = githubID
+
+        if githubSecret==None:
+            raise Exception("No GitHub Secret inserted")
+        if type(githubSecret)!=str:
+            raise Exception("No GitHub Secret is not a str")
         self._githubSecret = githubSecret
+        
         self._names = set()
         self._excluded = set()
 
