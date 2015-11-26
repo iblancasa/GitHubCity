@@ -65,8 +65,8 @@ class GitHubCity:
             a new instance of GithubCity class
 
         """
-        
-        if type(city)==None:
+
+        if city==None:
             raise Exception("City is not defined")
 
         self._city = city
@@ -109,7 +109,7 @@ class GitHubCity:
                 repeat += 1
         return len(new_users) - repeat
 
-    def _read_API(self, url):
+    def _readAPI(self, url):
         """Read a petition to the GitHub API (private).
 
         Note:
@@ -198,7 +198,7 @@ class GitHubCity:
 
         """
         url = self._getURL(1, start_date, final_date)
-        data = self._read_API(url)
+        data = self._readAPI(url)
 
         total_count = data["total_count"]
         added = self._addUsers(data['items'])
@@ -208,14 +208,8 @@ class GitHubCity:
 
         while total_count > added:
             page += 1
-            if page > total_pages:
-                page = 1
-
             url = self._getURL(page, start_date, final_date)
-
-            data = _read_API(url)
-
-            total_count = data["total_count"]
+            data = self._readAPI(url)
             added += self._addUsers(data['items'])
 
     def getCityUsers(self):
