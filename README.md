@@ -1,13 +1,13 @@
 # GitHubCity
 
 [![Build Status](https://travis-ci.org/iblancasa/GitHubCity.svg?branch=master)](https://travis-ci.org/iblancasa/GitHubCity)
-[![GitHub license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/iblancasa/GitHubCity)
+[![GitHub license](https://img.shields.io/github/license/iblancasa/GitHubCity.svg)](https://github.com/iblancasa/GitHubCity)[![Coverage Status](https://coveralls.io/repos/iblancasa/GitHubCity/badge.svg?branch=testing&service=github)](https://coveralls.io/github/iblancasa/GitHubCity?branch=testing)
 
 ## What is this?
 This is a small library which gets all GitHub users given a city. Original idea is [Top-GitHub-Users-Data](https://github.com/JJ/top-github-users-data) by [@JJ](https://github.com/JJ), an adaptation of [top-github-users](https://github.com/paulmillr/top-github-users) from [@paulmillr](https://github.com/paulmillr/).
 
 ## What I can do with this?
-Now, you only can get all user names from a city. In future, this will be an amazing library.
+Now, you only can get all user names from a city (with a city in the location field). In future, this will be an amazing library.
 
 ## What I need to run this?
 You will need to install Python 3. Python 2 is not supported. I recommend you [install Anaconda](https://www.continuum.io/).
