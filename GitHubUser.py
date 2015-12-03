@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""This module allow to developers to get all users of GitHub that have a given
-city in their profile. For example, if I want getting all users from London,
-I will get all users that have London in their profiles (they could live in London or not)
+"""This module allow to developers to get all some data about a given GitHub user.
 
 Author: Israel Blancas @iblancasa
 Original idea: https://github.com/JJ/github-city-rankings
@@ -29,6 +27,9 @@ The MIT License (MIT)
     IN THE SOFTWARE.
 
 """
+import time
+from bs4 import BeautifulSoup
+import urllib.request
 
 class GitHubUser:
     """Manager of a GitHub User
@@ -41,7 +42,6 @@ class GitHubUser:
         _gists (int): total number of gists of an user (private).
         _longestStreak (int): maximum number of consecutive days with activity (private).
         _numRepos (int): number of repositories of an user (private).
-
     """
 
     def __init__(self, name):
@@ -53,3 +53,66 @@ class GitHubUser:
             a new instance of GitHubUser class
         """
         self._name = name
+
+
+    def getData(self):
+        """Get data of a user from GitHub web.
+        """
+        code = 0
+        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
+               'Accept': 'text/html'
+               }
+        url = "https://github.com/"+self._name
+
+        while code != 200:
+            req = urllib.request.Request(url, headers=hdr)
+            try:
+                response = urllib.request.urlopen(req)
+                code = response.code
+
+            except urllib.error.URLError as e:
+                time.sleep(60)
+                code = e.code
+
+
+        data = response.read().decode('utf-8')
+        web = BeautifulSoup(data,"lxml")
+
+        #Contributions, longest streak and current streak
+        contributions_raw = web.find_all('span',{'class':'contrib-number'})
+        self._contributions = int(contributions_raw[0].text.split(" ")[0].replace(",",""))
+        self._longestStreak = int(contributions_raw[1].text.split(" ")[0].replace(",",""))
+        self._currentStreak = int(contributions_raw[2].text.split(" ")[0].replace(",",""))
+
+        #Language
+        self._language = web.find("meta", {"name":"description"})['content'].split(" ")[6]
+        if self._language[len(self._language)-1]==",":
+            self._language = self._language[:-1]
+
+        #Avatar
+        self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
+
+        #Followers
+        vcard = web.find_all("strong", {"class":"vcard-stat-count"})
+        self._followers = int(vcard[0].text)
+
+        #Location
+        self._location = web.find("li", {"itemprop":"homeLocation"}).text
+
+        #Date of creation
+        self._join = web.find("time",{"class":"join-date"})["datetime"]
+
+        #Number of organizations
+        self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
+
+        #Number of repos
+        #Number of total stars
+
+
+
+
+
+
+
+user = GitHubUser("iblancasa")
+user.getData()
