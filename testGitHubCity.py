@@ -202,7 +202,8 @@ def test_addUser():
 
     cityC = GitHubCity("Granada",idGH,secretGH)
     cityC._getPeriodUsers(datetime.date(2014, 10, 30),datetime.date(2015, 11, 20))
-    eq_(len(cityC._names),184,"Get period (short) is not OK")
+    print(len(cityC._names))
+    eq_(len(cityC._names),189,"Get period (short) is not OK")
 
 def test_getAllUsers():
     """Get all users from a city
