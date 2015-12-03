@@ -30,6 +30,7 @@ The MIT License (MIT)
 import time
 from bs4 import BeautifulSoup
 import urllib.request
+import datetime, dateutil.parser
 
 class GitHubUser:
     """Manager of a GitHub User
@@ -121,7 +122,7 @@ class GitHubUser:
         self._location = web.find("li", {"itemprop":"homeLocation"}).text
 
         #Date of creation
-        self._join = web.find("time",{"class":"join-date"})["datetime"]
+        self._join = dateutil.parser.parse(web.find("time",{"class":"join-date"})["datetime"])
 
         #Number of organizations
         self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))

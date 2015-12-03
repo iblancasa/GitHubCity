@@ -86,6 +86,7 @@ def testGetters():
     eq_(user._stars, user.getStars(),"Stars getter is not correctly")
 
 def testLotOfRequest():
+    """Test if request are completed when server says: 'no more' """
     global user
     i = 0
     while i<50:
