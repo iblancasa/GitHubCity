@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""This module allow to developers to get all users of GitHub that have a given
-city in their profile. For example, if I want getting all users from London,
-I will get all users that have London in their profiles (they could live in London or not)
+"""This module allow to developers to get all some data about a given GitHub user.
 
 Author: Israel Blancas @iblancasa
 Original idea: https://github.com/JJ/github-city-rankings
@@ -29,19 +27,21 @@ The MIT License (MIT)
     IN THE SOFTWARE.
 
 """
+import time
+from bs4 import BeautifulSoup
+import urllib.request
+import datetime, dateutil.parser
 
 class GitHubUser:
     """Manager of a GitHub User
 
     Attributes:
         _name (str): Name of the user (private).
-        _id (str): ID of the user (private).
         _contributions (int): total contributions of a user in the last year (private).
         _followers (int): total number of followers of an user (private).
         _gists (int): total number of gists of an user (private).
         _longestStreak (int): maximum number of consecutive days with activity (private).
         _numRepos (int): number of repositories of an user (private).
-
     """
 
     def __init__(self, name):
@@ -53,3 +53,109 @@ class GitHubUser:
             a new instance of GitHubUser class
         """
         self._name = name
+
+    def getName(self):
+        return self._name
+
+    def getContributions(self):
+        return self._contributions
+
+    def getLongestStreak(self):
+        return self._longestStreak
+
+    def getCurrentStreak(self):
+        return self._currentStreak
+
+    def getLanguage(self):
+        return self._language
+
+    def getAvatar(self):
+        return self._avatar
+
+    def getFollowers(self):
+        return self._followers
+
+    def getLocation(self):
+        return self._location
+
+    def getJoin(self):
+        return self._join
+
+    def getOrganizations(self):
+        return self._organizations
+
+    def getNumberOfRepositories(self):
+        return self._numRepos
+
+    def getStars(self):
+        return self._stars
+
+
+    def getData(self):
+        """Get data of a GitHub user.
+        """
+
+        url = "https://github.com/"+self._name
+
+        data = self._getDataFromURL(url)
+        web = BeautifulSoup(data,"lxml")
+
+        #Contributions, longest streak and current streak
+        contributions_raw = web.find_all('span',{'class':'contrib-number'})
+        self._contributions = int(contributions_raw[0].text.split(" ")[0].replace(",",""))
+        self._longestStreak = int(contributions_raw[1].text.split(" ")[0].replace(",",""))
+        self._currentStreak = int(contributions_raw[2].text.split(" ")[0].replace(",",""))
+
+        #Language
+        self._language = web.find("meta", {"name":"description"})['content'].split(" ")[6]
+        if self._language[len(self._language)-1]==",":
+            self._language = self._language[:-1]
+
+        #Avatar
+        self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
+
+        #Followers
+        vcard = web.find_all("strong", {"class":"vcard-stat-count"})
+        self._followers = int(vcard[0].text)
+
+        #Location
+        self._location = web.find("li", {"itemprop":"homeLocation"}).text
+
+        #Date of creation
+        self._join = dateutil.parser.parse(web.find("time",{"class":"join-date"})["datetime"])
+
+        #Number of organizations
+        self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
+
+        #Number of repos
+        url +="?tab=repositories"
+        data = self._getDataFromURL(url)
+        web = BeautifulSoup(data,"lxml")
+
+        repos = web.find_all("a",{"aria-label":"Stargazers"})
+        self._numRepos = (len(repos))
+
+        #Number of total stars
+        stars = 0
+        for repo in repos:
+            stars += int(repo.text)
+
+        self._stars = stars
+
+    def _getDataFromURL(self, url):
+        code = 0
+
+        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
+               'Accept': 'text/html'
+               }
+
+        while code != 200:
+            req = urllib.request.Request(url, headers=hdr)
+            try:
+                response = urllib.request.urlopen(req)
+                code = response.code
+
+            except urllib.error.HTTPError as e:
+                time.sleep(5)
+                code = e.code
+        return response.read().decode('utf-8')
