@@ -36,7 +36,6 @@ class GitHubUser:
 
     Attributes:
         _name (str): Name of the user (private).
-        _id (str): ID of the user (private).
         _contributions (int): total contributions of a user in the last year (private).
         _followers (int): total number of followers of an user (private).
         _gists (int): total number of gists of an user (private).
@@ -138,8 +137,9 @@ class GitHubUser:
         #Number of total stars
         stars = 0
         for repo in repos:
-            self._stars += int(repo.text)
+            stars += int(repo.text)
 
+        self._stars = stars
 
     def _getDataFromURL(self, url):
         code = 0
@@ -154,7 +154,7 @@ class GitHubUser:
                 response = urllib.request.urlopen(req)
                 code = response.code
 
-            except urllib.error.URLError as e:
-                time.sleep(60)
+            except urllib.error.HTTPError as e:
+                time.sleep(5)
                 code = e.code
         return response.read().decode('utf-8')
