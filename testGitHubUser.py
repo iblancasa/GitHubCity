@@ -88,10 +88,8 @@ def testGetters():
 def testLotOfRequest():
     global user
     i = 0
-    print(datetime.datetime.now().time())
     while i<50:
         user._contributions = 0
         user.getData()
         i+=1
-    print(datetime.datetime.now().time())
     ok_(user._contributions!=0, "Lot of request fail")
