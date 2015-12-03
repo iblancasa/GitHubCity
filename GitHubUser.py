@@ -54,28 +54,50 @@ class GitHubUser:
         """
         self._name = name
 
+    def getName(self):
+        return self._name
+
+    def getContributions(self):
+        return self._contributions
+
+    def getLongestStreak(self):
+        return self._longestStreak
+
+    def getCurrentStreak(self):
+        return self._currentStreak
+
+    def getLanguage(self):
+        return self._language
+
+    def getAvatar(self):
+        return self._avatar
+
+    def getFollowers(self):
+        return self._followers
+
+    def getLocation(self):
+        return self._location
+
+    def getJoin(self):
+        return self._join
+
+    def getOrganizations(self):
+        return self._organizations
+
+    def getNumberOfRepositories(self):
+        return self._numRepos
+
+    def getStars(self):
+        return self._stars
+
 
     def getData(self):
-        """Get data of a user from GitHub web.
+        """Get data of a GitHub user.
         """
-        code = 0
-        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
-               'Accept': 'text/html'
-               }
+
         url = "https://github.com/"+self._name
 
-        while code != 200:
-            req = urllib.request.Request(url, headers=hdr)
-            try:
-                response = urllib.request.urlopen(req)
-                code = response.code
-
-            except urllib.error.URLError as e:
-                time.sleep(60)
-                code = e.code
-
-
-        data = response.read().decode('utf-8')
+        data = self._getDataFromURL(url)
         web = BeautifulSoup(data,"lxml")
 
         #Contributions, longest streak and current streak
@@ -106,13 +128,33 @@ class GitHubUser:
         self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
 
         #Number of repos
+        url +="?tab=repositories"
+        data = self._getDataFromURL(url)
+        web = BeautifulSoup(data,"lxml")
+
+        repos = web.find_all("a",{"aria-label":"Stargazers"})
+        self._numRepos = (len(repos))
+
         #Number of total stars
+        stars = 0
+        for repo in repos:
+            self._stars += int(repo.text)
 
 
+    def _getDataFromURL(self, url):
+        code = 0
 
+        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
+               'Accept': 'text/html'
+               }
 
+        while code != 200:
+            req = urllib.request.Request(url, headers=hdr)
+            try:
+                response = urllib.request.urlopen(req)
+                code = response.code
 
-
-
-user = GitHubUser("iblancasa")
-user.getData()
+            except urllib.error.URLError as e:
+                time.sleep(60)
+                code = e.code
+        return response.read().decode('utf-8')
