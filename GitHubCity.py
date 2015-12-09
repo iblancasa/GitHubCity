@@ -115,6 +115,7 @@ class GitHubCity:
                 myNewUser = GitHubUser(user["login"])
                 myNewUser.getData()
                 self._dataUsers.append(myNewUser)
+                time.sleep(0.01)
             else:
                 repeat += 1
         return len(new_users) - repeat
@@ -134,13 +135,13 @@ class GitHubCity:
                 * total_count (int): number of total users that match with the search
                 * incomplete_results (bool): https://developer.github.com/v3/search/#timeouts-and-incomplete-results
                 * items (List[dict]): a list with the users that match with the search
-
         """
 
         code = 0
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
                'Accept': 'application/vnd.github.v3.text-match+json'
                }
+        response = None
         while code != 200:
             req = urllib.request.Request(url, headers=hdr)
             try:
@@ -149,6 +150,7 @@ class GitHubCity:
             except urllib.error.URLError as e:
                 time.sleep(60)
                 code = e.code
+        response.close()
 
         data = json.loads(response.read().decode('utf-8'))
         return data

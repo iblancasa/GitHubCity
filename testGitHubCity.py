@@ -202,8 +202,8 @@ def test_addUser():
 
     cityC = GitHubCity("Granada",idGH,secretGH)
     cityC._getPeriodUsers(datetime.date(2014, 10, 30),datetime.date(2015, 11, 20))
-    print(len(cityC._names))
-    eq_(len(cityC._names),189,"Get period (short) is not OK")
+
+    eq_(len(cityC._names),190,"Get period (long) is not OK")
 
     ok_(len(cityC._dataUsers)!=0, "Users data is not get correctly")
 
@@ -225,7 +225,7 @@ def test_getAllUsers():
 
 
 def test_excludeUsers():
-    """Excluded users are excluded from the list
+    """Excluded users that are excluded from the list
     """
     global idGH, secretGH, excluded, dataExclude
 
