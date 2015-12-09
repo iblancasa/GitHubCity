@@ -205,6 +205,8 @@ def test_addUser():
     print(len(cityC._names))
     eq_(len(cityC._names),189,"Get period (short) is not OK")
 
+    ok_(len(cityC._dataUsers)!=0, "Users data is not get correctly")
+
 def test_getAllUsers():
     """Get all users from a city
     """
