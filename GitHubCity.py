@@ -245,10 +245,3 @@ class GitHubCity:
             return -1
         else:
             return len(self._names)
-
-
-
-idGH = os.environ.get('GH_ID')
-secretGH = os.environ.get('GH_SECRET')
-granada = GitHubCity("granada", idGH, secretGH)
-granada.getCityUsers()
