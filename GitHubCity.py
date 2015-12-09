@@ -51,7 +51,7 @@ class GitHubCity:
         _names (set): Name of all users in a city (private)
         _githubID (str): ID of your GitHub application.
         _githubSecret (str): secretGH of your GitHub application.
-
+        _dataUsers (List[GitHubUser]): the list of GitHub users.
     """
 
     def __init__(self, city, githubID, githubSecret, excludedJSON=None):
