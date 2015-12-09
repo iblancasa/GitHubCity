@@ -36,6 +36,11 @@ import time
 import json
 from urllib.error import HTTPError
 from dateutil.relativedelta import relativedelta
+import os
+import sys
+sys.path.append(os.getcwd())
+from GitHubUser import *
+
 
 
 class GitHubCity:
@@ -82,6 +87,8 @@ class GitHubCity:
         self._names = set()
         self._excluded = set()
 
+        self._dataUsers = []
+
         if excludedJSON:
             for e in excludedJSON:
                 self._excluded.add(e["name"])
@@ -105,6 +112,9 @@ class GitHubCity:
         for user in new_users:
             if not user["login"] in self._names and not user["login"] in self._excluded:
                 self._names.add(user["login"])
+                myNewUser = GitHubUser(user["login"])
+                myNewUser.getData()
+                self._dataUsers.append(myNewUser)
             else:
                 repeat += 1
         return len(new_users) - repeat
@@ -212,6 +222,9 @@ class GitHubCity:
             data = self._readAPI(url)
             added += self._addUsers(data['items'])
 
+
+
+
     def getCityUsers(self):
         """Get all the users from the city.
         """
@@ -232,3 +245,10 @@ class GitHubCity:
             return -1
         else:
             return len(self._names)
+
+
+
+idGH = os.environ.get('GH_ID')
+secretGH = os.environ.get('GH_SECRET')
+granada = GitHubCity("granada", idGH, secretGH)
+granada.getCityUsers()
