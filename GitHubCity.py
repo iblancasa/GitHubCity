@@ -154,7 +154,6 @@ class GitHubCity:
             except urllib.error.URLError as e:
                 reset = int(e.getheader("X-RateLimit-Reset"))
                 now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
-                print(reset - now_sec)
                 time.sleep(reset - now_sec)
                 code = e.code
 
@@ -230,16 +229,15 @@ class GitHubCity:
         page = 1
         total_pages = int(total_count / 100) + 1
 
-        while total_count > added:
-            page += 1
+        while total_pages>=page:
             url = self._getURL(page, start_date, final_date)
             data = self._readAPI(url)
             added += self._addUsers(data['items'])
+            page += 1
 
 
     def _readAndAdd(self,page):
         url = self._getURL(page)
-        print(url)
         data = self._readAPI(url)
         self._addUsers(data["items"])
 
@@ -254,7 +252,7 @@ class GitHubCity:
         thr.add(newThr)
         newThr.start()
 
-        while page<totalPages:
+        while page<=totalPages:
             newThr = threading.Thread(target=self._readAndAdd, args=(page,))
             newThr.setDaemon(True)
             thr.add(newThr)
@@ -271,23 +269,18 @@ class GitHubCity:
         """
         comprobation = self._readAPI(self._getURL())
         if comprobation["total_count"]>=1000: #Big City
-            start_date = datetime.datetime.now().date()
-            final_date = start_date - relativedelta(months=+1)
-            limit = datetime.date(2008, 1, 1)
 
-            while limit < start_date:
-                newThr = threading.Thread(target=self._getPeriodUsers, args=(final_date, start_date,))
+            for i in self._intervals:
+                newThr = threading.Thread(target=self._getPeriodUsers, args=(i[0], i[1],))
                 newThr.setDaemon(True)
                 self._threads.add(newThr)
                 newThr.start()
-                start_date, final_date = self._getPeriod(start_date, final_date)
-
 
             for t in self._threads:
                 t.join()
             self._threads = set()
+
         else:
-            print("small")
             self._getSmallCityUsers(comprobation["total_count"],comprobation["items"])
 
 
