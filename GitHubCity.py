@@ -163,7 +163,7 @@ class GitHubCity:
         response.close()
         return data
 
-    def _getURL(self, page=1, start_date=None, final_date=None):
+    def _getURL(self, page=1, start_date=None, final_date=None,order="asc"):
         """Get the API's URL to query to get data about users (private).
 
         Note:
@@ -181,13 +181,13 @@ class GitHubCity:
         if not start_date or not final_date:
             url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
                 "&order=desc&q=sort:joined+type:user+location:" + self._city + \
-                "&per_page=100&page=" + str(page)
+                "&sort=joined&order=asc&per_page=100&page=" + str(page)
         else:
             url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
                 "&order=desc&q=sort:joined+type:user+location:" + self._city + \
                 "+created:" + start_date.strftime("%Y-%m-%d") +\
                 ".." + final_date.strftime("%Y-%m-%d") +\
-                "&per_page=100&page=" + str(page)
+                "&sort=joined&order="+order+"&per_page=100&page=" + str(page)
 
         return url
 
