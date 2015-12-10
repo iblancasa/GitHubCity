@@ -31,6 +31,7 @@ The MIT License (MIT)
 """
 
 import urllib.request
+import threading
 import datetime
 import calendar
 import time
@@ -90,6 +91,8 @@ class GitHubCity:
 
         self._dataUsers = []
 
+        self._threads = set()
+
         if excludedJSON:
             for e in excludedJSON:
                 self._excluded.add(e["name"])
@@ -113,9 +116,10 @@ class GitHubCity:
         for user in new_users:
             if not user["login"] in self._names and not user["login"] in self._excluded:
                 self._names.add(user["login"])
-            #    myNewUser = GitHubUser(user["login"])
-            #    myNewUser.getData()
-            #    self._dataUsers.append(myNewUser)
+                myNewUser = GitHubUser(user["login"])
+                myNewUser.getData()
+                self._dataUsers.append(myNewUser)
+
             else:
                 repeat += 1
         return len(new_users) - repeat
@@ -236,10 +240,18 @@ class GitHubCity:
         start_date = datetime.datetime.now().date()
         final_date = start_date - relativedelta(months=+1)
         limit = datetime.date(2008, 1, 1)
-
+        a = 0
         while limit < start_date:
-            self._getPeriodUsers(final_date, start_date)
+            newThr = threading.Thread(target=self._getPeriodUsers, args=(final_date, start_date,),name=str(a))
+            newThr.setDaemon(True)
+            self._threads.add(newThr)
+            newThr.start()
             start_date, final_date = self._getPeriod(start_date, final_date)
+            a+=1
+
+        for t in self._threads:
+            t.join()
+        self._threads = set()
 
     def getTotalUsers(self):
         """Get the number of calculated users
