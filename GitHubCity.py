@@ -113,9 +113,9 @@ class GitHubCity:
         for user in new_users:
             if not user["login"] in self._names and not user["login"] in self._excluded:
                 self._names.add(user["login"])
-                myNewUser = GitHubUser(user["login"])
-                myNewUser.getData()
-                self._dataUsers.append(myNewUser)
+            #    myNewUser = GitHubUser(user["login"])
+            #    myNewUser.getData()
+            #    self._dataUsers.append(myNewUser)
             else:
                 repeat += 1
         return len(new_users) - repeat
@@ -152,6 +152,7 @@ class GitHubCity:
                 now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
                 time.sleep(reset - now_sec)
                 code = e.code
+
 
         data = json.loads(response.read().decode('utf-8'))
         response.close()
@@ -195,8 +196,8 @@ class GitHubCity:
             Two datetime.date with one month more than the start and final arguments.
 
         """
-        start = final + relativedelta(days=+1)
-        final = start + relativedelta(months=+1)
+        start = final - relativedelta(days=+1)
+        final = start - relativedelta(months=+1)
         return (start, final)
 
     def _getPeriodUsers(self, start_date, final_date):
@@ -232,12 +233,12 @@ class GitHubCity:
     def getCityUsers(self):
         """Get all the users from the city.
         """
-        start_date = datetime.date(2008, 1, 1)
-        final_date = datetime.date(2008, 2, 1)
-        today = datetime.datetime.now().date()
+        start_date = datetime.datetime.now().date()
+        final_date = start_date - relativedelta(months=+1)
+        limit = datetime.date(2008, 1, 1)
 
-        while start_date < today:
-            self._getPeriodUsers(start_date, final_date)
+        while limit < start_date:
+            self._getPeriodUsers(final_date, start_date)
             start_date, final_date = self._getPeriod(start_date, final_date)
 
     def getTotalUsers(self):
