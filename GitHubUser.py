@@ -31,6 +31,7 @@ import time
 from bs4 import BeautifulSoup
 import urllib.request
 import datetime, dateutil.parser
+import re
 
 class GitHubUser:
     """Manager of a GitHub User
@@ -137,8 +138,10 @@ class GitHubUser:
 
         #Number of total stars
         stars = 0
+        non_decimal = re.compile(r'[^\d]+')
+
         for repo in repos:
-            stars += int(repo.text)
+            stars += int(non_decimal.sub('', repo.text))
 
         self._stars = stars
 
