@@ -114,9 +114,8 @@ class GitHubCity:
             if not user["login"] in self._names and not user["login"] in self._excluded:
                 self._names.add(user["login"])
                 myNewUser = GitHubUser(user["login"])
-            #    myNewUser.getData()
+                myNewUser.getData()
                 self._dataUsers.append(myNewUser)
-            #    time.sleep(0.01)
             else:
                 repeat += 1
         return len(new_users) - repeat

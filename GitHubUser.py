@@ -154,7 +154,6 @@ class GitHubUser:
             try:
                 response = urllib.request.urlopen(req)
                 code = response.code
-
             except urllib.error.HTTPError as e:
                 time.sleep(5)
                 code = e.code
