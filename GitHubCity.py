@@ -116,10 +116,9 @@ class GitHubCity:
         for user in new_users:
             if not user["login"] in self._names and not user["login"] in self._excluded:
                 self._names.add(user["login"])
-                myNewUser = GitHubUser(user["login"])
-                myNewUser.getData()
-                self._dataUsers.append(myNewUser)
-
+            #    myNewUser = GitHubUser(user["login"])
+            #    myNewUser.getData()
+            #    self._dataUsers.append(myNewUser)
             else:
                 repeat += 1
         return len(new_users) - repeat
@@ -151,9 +150,11 @@ class GitHubCity:
             try:
                 response = urllib.request.urlopen(req)
                 code = response.code
+                time.sleep(0.1)
             except urllib.error.URLError as e:
                 reset = int(e.getheader("X-RateLimit-Reset"))
                 now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
+                print(reset - now_sec)
                 time.sleep(reset - now_sec)
                 code = e.code
 
@@ -162,7 +163,7 @@ class GitHubCity:
         response.close()
         return data
 
-    def _getURL(self, page, start_date, final_date):
+    def _getURL(self, page=1, start_date=None, final_date=None):
         """Get the API's URL to query to get data about users (private).
 
         Note:
@@ -177,12 +178,16 @@ class GitHubCity:
             The URL (str) to query.
 
         """
-
-        url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
-            "&order=desc&q=sort:joined+type:user+location:" + self._city + \
-            "+created:" + start_date.strftime("%Y-%m-%d") +\
-            ".." + final_date.strftime("%Y-%m-%d") +\
-            "&per_page=100&page=" + str(page)
+        if not start_date or not final_date:
+            url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
+                "&order=desc&q=sort:joined+type:user+location:" + self._city + \
+                "&per_page=100&page=" + str(page)
+        else:
+            url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
+                "&order=desc&q=sort:joined+type:user+location:" + self._city + \
+                "+created:" + start_date.strftime("%Y-%m-%d") +\
+                ".." + final_date.strftime("%Y-%m-%d") +\
+                "&per_page=100&page=" + str(page)
 
         return url
 
@@ -232,26 +237,64 @@ class GitHubCity:
             added += self._addUsers(data['items'])
 
 
+    def _readAndAdd(self,page):
+        url = self._getURL(page)
+        print(url)
+        data = self._readAPI(url)
+        self._addUsers(data["items"])
+
+
+    def _getSmallCityUsers(self, totalUsers, newGetUsers):
+        totalPages = totalUsers/100+1
+        page = 1
+        thr = set()
+
+        newThr = threading.Thread(target=self._addUsers, args=(newGetUsers,))
+        newThr.setDaemon(True)
+        thr.add(newThr)
+        newThr.start()
+
+        while page<totalPages:
+            newThr = threading.Thread(target=self._readAndAdd, args=(page,))
+            newThr.setDaemon(True)
+            thr.add(newThr)
+            newThr.start()
+            page+=1
+
+        for t in thr:
+            t.join()
+
 
 
     def getCityUsers(self):
         """Get all the users from the city.
         """
-        start_date = datetime.datetime.now().date()
-        final_date = start_date - relativedelta(months=+1)
-        limit = datetime.date(2008, 1, 1)
-        a = 0
-        while limit < start_date:
-            newThr = threading.Thread(target=self._getPeriodUsers, args=(final_date, start_date,),name=str(a))
-            newThr.setDaemon(True)
-            self._threads.add(newThr)
-            newThr.start()
-            start_date, final_date = self._getPeriod(start_date, final_date)
-            a+=1
+        comprobation = self._readAPI(self._getURL())
+        if comprobation["total_count"]>=1000: #Big City
+            start_date = datetime.datetime.now().date()
+            final_date = start_date - relativedelta(months=+1)
+            limit = datetime.date(2008, 1, 1)
 
-        for t in self._threads:
-            t.join()
-        self._threads = set()
+            while limit < start_date:
+                newThr = threading.Thread(target=self._getPeriodUsers, args=(final_date, start_date,))
+                newThr.setDaemon(True)
+                self._threads.add(newThr)
+                newThr.start()
+                start_date, final_date = self._getPeriod(start_date, final_date)
+
+
+            for t in self._threads:
+                t.join()
+            self._threads = set()
+        else:
+            print("small")
+            self._getSmallCityUsers(comprobation["total_count"],comprobation["items"])
+
+
+
+
+
+
 
     def getTotalUsers(self):
         """Get the number of calculated users
