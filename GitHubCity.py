@@ -191,7 +191,7 @@ class GitHubCity:
 
         return url
 
-    def _getPeriod(self, start, final):
+    def _getPeriod(self, start, final, mInterval=1):
         """Get the next period (adding one month more) (private).
 
         Note:
@@ -206,7 +206,7 @@ class GitHubCity:
 
         """
         start = final - relativedelta(days=+1)
-        final = start - relativedelta(months=+1)
+        final = start - relativedelta(months=+mInterval)
         return (start, final)
 
     def _getPeriodUsers(self, start_date, final_date):
@@ -290,6 +290,27 @@ class GitHubCity:
             print("small")
             self._getSmallCityUsers(comprobation["total_count"],comprobation["items"])
 
+
+    def _validInterval(self, start, finish):
+        data = self._readAPI(self._getURL(1,start,finish))
+        if data["total_count"]>=1000:
+            middle = start + (finish - start)/2
+            self._validInterval(start,middle)
+            self._validInterval(middle,finish)
+        else:
+            self._intervals.add((start,finish))
+
+    def calculateBestIntervals(self):
+        self._intervals = None
+        comprobation = self._readAPI(self._getURL())
+
+        if comprobation["total_count"]>=1000: #Big City
+            self._intervals = set()
+            self._bigCity = True
+            self._validInterval(datetime.date(2008, 1, 1), datetime.datetime.now().date())
+        else:
+            self._bigCity = False
+            return
 
 
 
