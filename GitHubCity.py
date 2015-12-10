@@ -32,6 +32,7 @@ The MIT License (MIT)
 
 import urllib.request
 import datetime
+import calendar
 import time
 import json
 from urllib.error import HTTPError
@@ -113,9 +114,9 @@ class GitHubCity:
             if not user["login"] in self._names and not user["login"] in self._excluded:
                 self._names.add(user["login"])
                 myNewUser = GitHubUser(user["login"])
-                myNewUser.getData()
+            #    myNewUser.getData()
                 self._dataUsers.append(myNewUser)
-                time.sleep(0.01)
+            #    time.sleep(0.01)
             else:
                 repeat += 1
         return len(new_users) - repeat
@@ -135,24 +136,26 @@ class GitHubCity:
                 * total_count (int): number of total users that match with the search
                 * incomplete_results (bool): https://developer.github.com/v3/search/#timeouts-and-incomplete-results
                 * items (List[dict]): a list with the users that match with the search
+
         """
 
         code = 0
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
                'Accept': 'application/vnd.github.v3.text-match+json'
                }
-        response = None
         while code != 200:
             req = urllib.request.Request(url, headers=hdr)
             try:
                 response = urllib.request.urlopen(req)
                 code = response.code
             except urllib.error.URLError as e:
-                time.sleep(60)
+                reset = int(e.getheader("X-RateLimit-Reset"))
+                now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
+                time.sleep(reset - now_sec)
                 code = e.code
-        response.close()
 
         data = json.loads(response.read().decode('utf-8'))
+        response.close()
         return data
 
     def _getURL(self, page, start_date, final_date):
