@@ -57,7 +57,7 @@ def setup():
     global dataExclude, excluded
     dataExclude = [
         {
-            "login": "asdpokjdf",
+            "login": "iblancasa",
             "id": 99999,
             "avatar_url": "https://avatars.githubusercontent.com/u/99999?v=3",
             "gravatar_id": "",
@@ -77,25 +77,26 @@ def setup():
             "score": 1.0
         },
         {
-            "login": "testingperson",
-            "id": 999999999,
-            "avatar_url": "https://avatars.githubusercontent.com/u/999999999?v=3",
+            "login": "nitehack",
+            "id": 99999,
+            "avatar_url": "https://avatars.githubusercontent.com/u/99999?v=3",
             "gravatar_id": "",
-            "url": "https://api.github.com/users/testingperson",
-            "html_url": "https://github.com/testingperson",
-            "followers_url": "https://api.github.com/users/testingperson/followers",
-            "following_url": "https://api.github.com/users/testingperson/following{/other_user}",
-            "gists_url": "https://api.github.com/users/testingperson/gists{/gist_id}",
-            "starred_url": "https://api.github.com/users/testingperson/starred{/owner}{/repo}",
-            "subscriptions_url": "https://api.github.com/users/testingpersontestingperson/subscriptions",
-            "organizations_url": "https://api.github.com/users/testingperson/orgs",
-            "repos_url": "https://api.github.com/users/testingperson/repos",
-            "events_url": "https://api.github.com/users/testingperson/events{/privacy}",
-            "received_events_url": "https://api.github.com/users/testingperson/received_events",
+            "url": "https://api.github.com/users/asdpokjdf",
+            "html_url": "https://github.com/asdpokjdf",
+            "followers_url": "https://api.github.com/users/asdpokjdf/followers",
+            "following_url": "https://api.github.com/users/asdpokjdf/following{/other_user}",
+            "gists_url": "https://api.github.com/users/asdpokjdf/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/asdpokjdf/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/asdpokjdf/subscriptions",
+            "organizations_url": "https://api.github.com/users/asdpokjdf/orgs",
+            "repos_url": "https://api.github.com/users/asdpokjdf/repos",
+            "events_url": "https://api.github.com/users/asdpokjdf/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/asdpokjdf/received_events",
             "type": "User",
             "site_admin": "false",
             "score": 1.0
-        }]
+        }
+        ]
 
     fileJSON = open('testExclude.json')
     excluded = json.loads(fileJSON.read())
@@ -142,17 +143,17 @@ def test_periodCalculation():
     """Period is calculated correctly
     """
     global cityA, start,finish
-    start = datetime.date(2015, 1, 1)
-    finish = datetime.date(2015, 2, 1)
+    start = datetime.date(2015, 2, 1)
+    finish = datetime.date(2015, 1, 1)
     start_result, final_result = cityA._getPeriod(start, finish)
-    difference_dates = final_result - start_result
-    difference_dates2 = start_result - start
+    difference_dates = start_result - final_result
+    difference_dates2 = start - start_result
 
-    eq_(difference_dates.days, 28, "Diference between " + str(final_result) + " and " +
+    eq_(difference_dates.days, 31, "Diference between " + str(final_result) + " and " +
                      str(start_result) + " is incorrect")
     eq_(difference_dates2.days, 32, "Diference between " + str(start_result) + " and " +
                      str(start) + " is incorrect")
-    eq_(start_result, finish + relativedelta(days=+1),
+    eq_(start_result + relativedelta(days=+1), finish ,
                      "Finish date and start result \ date must be differenced in one day")
 
 
@@ -162,14 +163,14 @@ def test_urlComposition():
     """
     global url, cityA, start, finish
 
-    url = cityA._getURL(1, start, finish)
+    url = cityA._getURL(1, finish, start)
     expected_url = "https://api.github.com/search/users?client_id=" +\
         cityA._githubID + "&client_secret=" + cityA._githubSecret + "&order=desc&q=sort:joined+" +\
         "type:user+location:Granada+created:2015-01-01..2015-02-01&per_page=100&page=1"
 
     ok_(url!=None, "URL was not returned")
     ok_(url!="", "URL is an empty string")
-    eq_(url, expected_url, "URL is not well formed")
+    eq_(url, expected_url, "URL is not well formed"+str(start)+" "+str(finish)+" "+url)
 
 
 
@@ -196,16 +197,9 @@ def test_addUser():
     eq_(added, 0, "The number of users added when all users are repeated is not correct")
 
     cityB = GitHubCity("Granada", idGH, secretGH)
-    cityB._getPeriodUsers(start, finish)
+    cityB._getPeriodUsers(finish, start)
     eq_(cityA._names, cityB._names, "Get period (short) is not OK")
 
-
-    cityC = GitHubCity("Granada",idGH,secretGH)
-    cityC._getPeriodUsers(datetime.date(2014, 10, 30),datetime.date(2015, 11, 20))
-
-    eq_(len(cityC._names),190,"Get period (long) is not OK")
-
-    ok_(len(cityC._dataUsers)!=0, "Users data is not get correctly")
 
 def test_getAllUsers():
     """Get all users from a city
@@ -232,9 +226,9 @@ def test_excludeUsers():
     cityD = GitHubCity("Granada", idGH, secretGH, excluded)
     cityD._addUsers(dataExclude)
 
-    ok_("testingperson" in cityD._names,
+    ok_("nitehack" in cityD._names,
                   "Add new user was no completed correctly when there is an excluded list")
-    ok_(not "asdpokjdf" in cityD._names,
+    ok_(not "iblancasa" in cityD._names,
                      "User was added to the users list and he is in excluded list")
 
 
