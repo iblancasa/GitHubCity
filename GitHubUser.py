@@ -30,6 +30,7 @@ The MIT License (MIT)
 import time
 from bs4 import BeautifulSoup
 import urllib.request
+from urllib.error import HTTPError, URLError
 import datetime, dateutil.parser
 import re
 
@@ -157,7 +158,10 @@ class GitHubUser:
             try:
                 response = urllib.request.urlopen(req)
                 code = response.code
-            except urllib.error.HTTPError as e:
+            except HTTPError as e:
                 time.sleep(5)
                 code = e.code
+            except URLError as e:
+                time.sleep(5)
+                code = 0
         return response.read().decode('utf-8')
