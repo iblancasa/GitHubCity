@@ -116,9 +116,10 @@ class GitHubCity:
         for user in new_users:
             if not user["login"] in self._names and not user["login"] in self._excluded:
                 self._names.add(user["login"])
-            #    myNewUser = GitHubUser(user["login"])
-            #    myNewUser.getData()
-            #    self._dataUsers.append(myNewUser)
+                myNewUser = GitHubUser(user["login"])
+                myNewUser.getData()
+                self._dataUsers.append(myNewUser)
+                print(len(self._dataUsers))
             else:
                 repeat += 1
         return len(new_users) - repeat
@@ -150,7 +151,6 @@ class GitHubCity:
             try:
                 response = urllib.request.urlopen(req)
                 code = response.code
-                time.sleep(0.1)
             except urllib.error.URLError as e:
                 reset = int(e.getheader("X-RateLimit-Reset"))
                 now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
@@ -190,23 +190,8 @@ class GitHubCity:
 
         return url
 
-    def _getPeriod(self, start, final, mInterval=1):
-        """Get the next period (adding one month more) (private).
 
-        Note:
-            This method is private.
 
-        Args:
-            start (datetime.date): start date of the range.
-            final (datetime.date): final date of the range.
-
-        Returns:
-            Two datetime.date with one month more than the start and final arguments.
-
-        """
-        start = final - relativedelta(days=+1)
-        final = start - relativedelta(months=+mInterval)
-        return (start, final)
 
     def _getPeriodUsers(self, start_date, final_date):
         """Get all the users given a period (private).
@@ -234,6 +219,7 @@ class GitHubCity:
             data = self._readAPI(url)
             added += self._addUsers(data['items'])
             page += 1
+
 
 
     def _readAndAdd(self,page):
@@ -293,6 +279,9 @@ class GitHubCity:
         else:
             self._intervals.add((start,finish))
 
+
+
+
     def calculateBestIntervals(self):
         self._intervals = None
         comprobation = self._readAPI(self._getURL())
@@ -304,10 +293,6 @@ class GitHubCity:
         else:
             self._bigCity = False
             return
-
-
-
-
 
 
     def getTotalUsers(self):
