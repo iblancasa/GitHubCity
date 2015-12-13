@@ -198,9 +198,6 @@ class GitHubCity:
 
         return url
 
-
-
-
     def _getPeriodUsers(self, start_date, final_date):
         """Get all the users given a period (private).
 
@@ -219,19 +216,18 @@ class GitHubCity:
         url = self._getURL(1, start_date, final_date)
         data = self._readAPI(url)
 
-        total_count = data["total_count"]
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
-            result = {executor.submit(self._addUser, new_user): new_user for new_user in data['items']}
-
+        total_pages = 10000
         page = 1
-        total_pages = int(total_count / 100) + 1
+
 
         while total_pages>=page:
             url = self._getURL(page, start_date, final_date)
             data = self._readAPI(url)
             with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
                 result = {executor.submit(self._addUser, new_user): new_user for new_user in data['items']}
+
+            total_count = data["total_count"]
+            total_pages = int(total_count / 100) + 1
             page += 1
 
 
