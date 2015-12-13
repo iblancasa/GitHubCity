@@ -36,6 +36,7 @@ import concurrent.futures
 import datetime
 import calendar
 import time
+from multiprocessing import Queue
 import json
 from urllib.error import HTTPError
 from dateutil.relativedelta import relativedelta
@@ -89,7 +90,8 @@ class GitHubCity:
             raise Exception("No GitHub Secret inserted")
         self._githubSecret = githubSecret
 
-        self._names = set()
+        self._names = Queue()
+        self._myusers = set()
         self._excluded = set()
 
         self._dataUsers = []
@@ -105,9 +107,10 @@ class GitHubCity:
         if debug:
             coloredlogs.install(level='DEBUG')
 
+        self._fin = False
 
 
-    def _addUser(self, new_users):
+    def _addUser(self, new_user):
         """Add new users to the list (private).
 
         Note:
@@ -121,13 +124,13 @@ class GitHubCity:
             the method returns the number of users added in this time to the users list.
 
         """
-        if not new_users["login"] in self._names and not new_users["login"] in self._excluded:
-            self._logger.debug("NEW USER "+new_users["login"]+" "+str(len(self._names)+1)+" "+\
-            threading.current_thread().name)
-            self._names.add(new_users["login"])
-            myNewUser = GitHubUser(new_users["login"])
+        if not new_user in self._myusers and not new_user in self._excluded:
+            myNewUser = GitHubUser(new_user)
             myNewUser.getData()
+            self._myusers.add(new_user)
             self._dataUsers.append(myNewUser)
+            self._logger.debug("NEW USER "+new_user+" "+str(len(self._dataUsers)+1)+" "+\
+            threading.current_thread().name)
 
 
 
@@ -162,7 +165,7 @@ class GitHubCity:
             except urllib.error.URLError as e:
                 reset = int(e.getheader("X-RateLimit-Reset"))
                 now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
-                self._logger.warning("Limit of API. Wait: "+str(now_sec)+" secs")
+                self._logger.warning("Limit of API. Wait: "+str(reset - now_sec)+" secs")
                 time.sleep(reset - now_sec)
                 code = e.code
 
@@ -198,6 +201,25 @@ class GitHubCity:
 
         return url
 
+    def _processUsers(self):
+        #coloredlogs.install(level='DEBUG')
+        while not self._fin or not self._names.empty():
+            new_user = self._names.get()
+            if new_user:
+                self._addUser(new_user)
+                new_user = None
+
+
+
+    def _launchThreads(self):
+        i = 0
+        while i<40:
+            i+=1
+            newThr = threading.Thread(target=self._processUsers)
+            newThr.setDaemon(True)
+            self._threads.add(newThr)
+            newThr.start()
+
     def _getPeriodUsers(self, start_date, final_date):
         """Get all the users given a period (private).
 
@@ -213,22 +235,29 @@ class GitHubCity:
         self._logger.info("Getting users from "+start_date.strftime("%Y-%m-%d")+" to "+\
         final_date.strftime("%Y-%m-%d"))
 
+        self._launchThreads()
+
         url = self._getURL(1, start_date, final_date)
         data = self._readAPI(url)
 
         total_pages = 10000
         page = 1
 
-
         while total_pages>=page:
             url = self._getURL(page, start_date, final_date)
             data = self._readAPI(url)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
-                result = {executor.submit(self._addUser, new_user): new_user for new_user in data['items']}
-
+            for u in data['items']:
+                self._names.put(u["login"])
             total_count = data["total_count"]
             total_pages = int(total_count / 100) + 1
             page += 1
+
+        self._fin = True
+
+        for t in self._threads:
+            t.join()
+
+        self._fin = False
 
 
 
@@ -270,14 +299,7 @@ class GitHubCity:
         if comprobation["total_count"]>=1000: #Big City
             self._logger.info("Big city")
             for i in self._intervals:
-                newThr = threading.Thread(target=self._getPeriodUsers, args=(i[0], i[1],))
-                newThr.setDaemon(True)
-                self._threads.add(newThr)
-                newThr.start()
-
-            for t in self._threads:
-                t.join()
-            self._threads = set()
+                self._getPeriodUsers(i[0], i[1])
 
         else:
             self._logger.info("Small city")
