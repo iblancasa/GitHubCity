@@ -32,6 +32,7 @@ The MIT License (MIT)
 
 import urllib.request
 import threading
+import concurrent.futures
 import datetime
 import calendar
 import time
@@ -40,6 +41,8 @@ from urllib.error import HTTPError
 from dateutil.relativedelta import relativedelta
 import os
 import sys
+import logging
+import coloredlogs
 sys.path.append(os.getcwd())
 from GitHubUser import *
 
@@ -56,7 +59,7 @@ class GitHubCity:
         _dataUsers (List[GitHubUser]): the list of GitHub users.
     """
 
-    def __init__(self, city, githubID, githubSecret, excludedJSON=None):
+    def __init__(self, city, githubID, githubSecret, excludedJSON=None, debug=False):
         """Constructor of the class.
 
         Note:
@@ -97,7 +100,14 @@ class GitHubCity:
             for e in excludedJSON:
                 self._excluded.add(e["name"])
 
-    def _addUsers(self, new_users):
+        self._logger = logging.getLogger("GitHubCity")
+
+        if debug:
+            coloredlogs.install(level='DEBUG')
+
+
+
+    def _addUser(self, new_users):
         """Add new users to the list (private).
 
         Note:
@@ -111,18 +121,15 @@ class GitHubCity:
             the method returns the number of users added in this time to the users list.
 
         """
+        if not new_users["login"] in self._names and not new_users["login"] in self._excluded:
+            self._logger.debug("NEW USER "+new_users["login"]+" "+str(len(self._names)+1)+" "+\
+            threading.current_thread().name)
+            self._names.add(new_users["login"])
+            myNewUser = GitHubUser(new_users["login"])
+            myNewUser.getData()
+            self._dataUsers.append(myNewUser)
 
-        repeat = 0
-        for user in new_users:
-            if not user["login"] in self._names and not user["login"] in self._excluded:
-                self._names.add(user["login"])
-                myNewUser = GitHubUser(user["login"])
-                myNewUser.getData()
-                self._dataUsers.append(myNewUser)
-                print(len(self._dataUsers))
-            else:
-                repeat += 1
-        return len(new_users) - repeat
+
 
     def _readAPI(self, url):
         """Read a petition to the GitHub API (private).
@@ -148,15 +155,16 @@ class GitHubCity:
                }
         while code != 200:
             req = urllib.request.Request(url, headers=hdr)
+            self._logger.debug("Getting data from "+url)
             try:
                 response = urllib.request.urlopen(req)
                 code = response.code
             except urllib.error.URLError as e:
                 reset = int(e.getheader("X-RateLimit-Reset"))
                 now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
+                self._logger.warning("Limit of API. Wait: "+str(now_sec)+" secs")
                 time.sleep(reset - now_sec)
                 code = e.code
-
 
         data = json.loads(response.read().decode('utf-8'))
         response.close()
@@ -205,11 +213,16 @@ class GitHubCity:
             final_date (datetime.date): final date of the range to search users.
 
         """
+        self._logger.info("Getting users from "+start_date.strftime("%Y-%m-%d")+" to "+\
+        final_date.strftime("%Y-%m-%d"))
+
         url = self._getURL(1, start_date, final_date)
         data = self._readAPI(url)
 
         total_count = data["total_count"]
-        added = self._addUsers(data['items'])
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
+            result = {executor.submit(self._addUser, new_user): new_user for new_user in data['items']}
 
         page = 1
         total_pages = int(total_count / 100) + 1
@@ -217,7 +230,8 @@ class GitHubCity:
         while total_pages>=page:
             url = self._getURL(page, start_date, final_date)
             data = self._readAPI(url)
-            added += self._addUsers(data['items'])
+            with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
+                result = {executor.submit(self._addUser, new_user): new_user for new_user in data['items']}
             page += 1
 
 
@@ -230,7 +244,7 @@ class GitHubCity:
 
     def _getSmallCityUsers(self, totalUsers, newGetUsers):
         totalPages = totalUsers/100+1
-        page = 1
+        page = 2
         thr = set()
 
         newThr = threading.Thread(target=self._addUsers, args=(newGetUsers,))
@@ -245,6 +259,9 @@ class GitHubCity:
             newThr.start()
             page+=1
 
+        self._logger.debug(str(len(thr))+" threads to calculate city")
+        self._logger.info("Waiting all threads")
+
         for t in thr:
             t.join()
 
@@ -255,7 +272,7 @@ class GitHubCity:
         """
         comprobation = self._readAPI(self._getURL())
         if comprobation["total_count"]>=1000: #Big City
-
+            self._logger.info("Big city")
             for i in self._intervals:
                 newThr = threading.Thread(target=self._getPeriodUsers, args=(i[0], i[1],))
                 newThr.setDaemon(True)
@@ -267,6 +284,7 @@ class GitHubCity:
             self._threads = set()
 
         else:
+            self._logger.info("Small city")
             self._getSmallCityUsers(comprobation["total_count"],comprobation["items"])
 
 
@@ -278,6 +296,8 @@ class GitHubCity:
             self._validInterval(middle,finish)
         else:
             self._intervals.add((start,finish))
+            self._logger.debug("Valid interval: "+start.strftime("%Y-%m-%d")+" to "+\
+            finish.strftime("%Y-%m-%d"))
 
 
 
@@ -290,9 +310,9 @@ class GitHubCity:
             self._intervals = set()
             self._bigCity = True
             self._validInterval(datetime.date(2008, 1, 1), datetime.datetime.now().date())
+            self._logger.info("Total number of intervals: "+ str(len(self._intervals)))
         else:
             self._bigCity = False
-            return
 
 
     def getTotalUsers(self):
