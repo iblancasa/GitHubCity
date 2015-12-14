@@ -54,10 +54,14 @@ class GitHubCity:
 
     Attributes:
         _city (str): Name of the city (private).
-        _names (set): Name of all users in a city (private)
+        _myusers (set): Name of all users in a city (private).
         _githubID (str): ID of your GitHub application.
         _githubSecret (str): secretGH of your GitHub application.
         _dataUsers (List[GitHubUser]): the list of GitHub users.
+        _excluded (set): list of names of excluded users.
+        _names (Queue): Queue with all users that we still have to process.
+        _threads (set): Set of active Threads.
+        _logger (logger): Logger.
     """
 
     def __init__(self, city, githubID, githubSecret, excludedJSON=None, debug=False):
@@ -71,6 +75,8 @@ class GitHubCity:
             city (str): Name of the city you want to search about.
             githubID (str): ID of your GitHub application.
             githubSecret (str): Secret of your GitHub application.
+            excludedJSON (dir): Excluded users of the ranking (see schemaExcluded.json)
+            debug (bool): Show a log in your terminal. Default: False
 
         Returns:
             a new instance of GithubCity class
@@ -115,13 +121,10 @@ class GitHubCity:
 
         Note:
             This method is private.
+            If the user is yet in the list (or in excluded users list), he/she will not be added
 
         Args:
-            new_users (List[dict]): a list of users to include in our users's list.
-
-        Returns:
-            Difference between the total of new_users and users repeat. In another words
-            the method returns the number of users added in this time to the users list.
+            new_user (str): name of a GitHub user to include in the ranking
 
         """
         if not new_user in self._myusers and not new_user in self._excluded:
@@ -131,7 +134,6 @@ class GitHubCity:
             self._dataUsers.append(myNewUser)
             self._logger.debug("NEW USER "+new_user+" "+str(len(self._dataUsers)+1)+" "+\
             threading.current_thread().name)
-
 
 
     def _readAPI(self, url):
@@ -149,7 +151,6 @@ class GitHubCity:
                 * total_count (int): number of total users that match with the search
                 * incomplete_results (bool): https://developer.github.com/v3/search/#timeouts-and-incomplete-results
                 * items (List[dict]): a list with the users that match with the search
-
         """
 
         code = 0
@@ -173,6 +174,7 @@ class GitHubCity:
         response.close()
         return data
 
+
     def _getURL(self, page=1, start_date=None, final_date=None,order="asc"):
         """Get the API's URL to query to get data about users (private).
 
@@ -183,6 +185,7 @@ class GitHubCity:
             page (int): number of the page.
             start_date (datetime.date): start date of the range to search users.
             final_date (datetime.date): final date of the range to search users.
+            order (str): order of the query. Valid values are 'asc' or 'desc'. Default: asc
 
         Returns:
             The URL (str) to query.
@@ -201,8 +204,14 @@ class GitHubCity:
 
         return url
 
+
     def _processUsers(self):
-        #coloredlogs.install(level='DEBUG')
+        """Process users of the queue (get from the queue an add user) (private)
+
+            Note:
+                This method is private.
+
+        """
         while not self._fin or not self._names.empty():
             new_user = self._names.get()
             if new_user:
@@ -213,6 +222,12 @@ class GitHubCity:
 
 
     def _launchThreads(self):
+        """Launch some threads and call to 'processUsers' (private)
+
+        Note:
+            This method is private.
+
+        """
         i = 0
         while i<35:
             i+=1
@@ -264,11 +279,26 @@ class GitHubCity:
         """Get all the users from the city.
         """
         comprobation = self._readAPI(self._getURL())
-        self._logger.info("Big city")
         for i in self._intervals:
             self._getPeriodUsers(i[0], i[1])
 
+
+
     def _validInterval(self, start, finish):
+        """Given a valid interval, check if the interval is correct (less than 1000 users).
+        If the interval is correct, it will be added to '_intervals' attribute. Else,
+        interval will be split in two news intervals and these intervals will be
+        checked.
+
+        Args:
+            start (datetime.date): start date of the interval
+            finish (datetime.date): finish date of the interval
+
+        Note:
+            This method is private.
+            Valid periods are added to the private _intervals attribute.
+
+        """
         data = self._readAPI(self._getURL(1,start,finish))
         if data["total_count"]>=1000:
             middle = start + (finish - start)/2
@@ -280,9 +310,9 @@ class GitHubCity:
             finish.strftime("%Y-%m-%d"))
 
 
-
-
     def calculateBestIntervals(self):
+        """Calcules valid intervals of a city (with less than 1000 users)
+        """
         self._intervals = None
         comprobation = self._readAPI(self._getURL())
         self._intervals = set()
