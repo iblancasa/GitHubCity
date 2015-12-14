@@ -207,13 +207,14 @@ class GitHubCity:
             new_user = self._names.get()
             if new_user:
                 self._addUser(new_user)
+                self._logger.debug(str(self._names.qsize())+" users to process")
                 new_user = None
 
 
 
     def _launchThreads(self):
         i = 0
-        while i<40:
+        while i<35:
             i+=1
             newThr = threading.Thread(target=self._processUsers)
             newThr.setDaemon(True)
@@ -256,55 +257,16 @@ class GitHubCity:
 
         for t in self._threads:
             t.join()
-
         self._fin = False
-
-
-
-    def _readAndAdd(self,page):
-        url = self._getURL(page)
-        data = self._readAPI(url)
-        self._addUsers(data["items"])
-
-
-    def _getSmallCityUsers(self, totalUsers, newGetUsers):
-        totalPages = totalUsers/100+1
-        page = 2
-        thr = set()
-
-        newThr = threading.Thread(target=self._addUsers, args=(newGetUsers,))
-        newThr.setDaemon(True)
-        thr.add(newThr)
-        newThr.start()
-
-        while page<=totalPages:
-            newThr = threading.Thread(target=self._readAndAdd, args=(page,))
-            newThr.setDaemon(True)
-            thr.add(newThr)
-            newThr.start()
-            page+=1
-
-        self._logger.debug(str(len(thr))+" threads to calculate city")
-        self._logger.info("Waiting all threads")
-
-        for t in thr:
-            t.join()
-
 
 
     def getCityUsers(self):
         """Get all the users from the city.
         """
         comprobation = self._readAPI(self._getURL())
-        if comprobation["total_count"]>=1000: #Big City
-            self._logger.info("Big city")
-            for i in self._intervals:
-                self._getPeriodUsers(i[0], i[1])
-
-        else:
-            self._logger.info("Small city")
-            self._getSmallCityUsers(comprobation["total_count"],comprobation["items"])
-
+        self._logger.info("Big city")
+        for i in self._intervals:
+            self._getPeriodUsers(i[0], i[1])
 
     def _validInterval(self, start, finish):
         data = self._readAPI(self._getURL(1,start,finish))
@@ -323,14 +285,10 @@ class GitHubCity:
     def calculateBestIntervals(self):
         self._intervals = None
         comprobation = self._readAPI(self._getURL())
-
-        if comprobation["total_count"]>=1000: #Big City
-            self._intervals = set()
-            self._bigCity = True
-            self._validInterval(datetime.date(2008, 1, 1), datetime.datetime.now().date())
-            self._logger.info("Total number of intervals: "+ str(len(self._intervals)))
-        else:
-            self._bigCity = False
+        self._intervals = set()
+        self._bigCity = True
+        self._validInterval(datetime.date(2008, 1, 1), datetime.datetime.now().date())
+        self._logger.info("Total number of intervals: "+ str(len(self._intervals)))
 
 
     def getTotalUsers(self):
@@ -338,7 +296,4 @@ class GitHubCity:
         Returns:
             Number (int) of calculated users
         """
-        if len(self._names) == 0:
-            return -1
-        else:
-            return len(self._names)
+        return self._dataUsers
