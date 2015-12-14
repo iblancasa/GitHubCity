@@ -212,12 +212,15 @@ class GitHubCity:
                 This method is private.
 
         """
+        time.sleep(1)
         while not self._fin or not self._names.empty():
             new_user = self._names.get()
             if new_user:
                 self._addUser(new_user)
                 self._logger.debug(str(self._names.qsize())+" users to process")
                 new_user = None
+            elif not new_user or self._names.empty():
+                return
 
 
 
@@ -229,7 +232,7 @@ class GitHubCity:
 
         """
         i = 0
-        while i<35:
+        while i<25:
             i+=1
             newThr = threading.Thread(target=self._processUsers)
             newThr.setDaemon(True)
@@ -251,8 +254,6 @@ class GitHubCity:
         self._logger.info("Getting users from "+start_date.strftime("%Y-%m-%d")+" to "+\
         final_date.strftime("%Y-%m-%d"))
 
-        self._launchThreads()
-
         url = self._getURL(1, start_date, final_date)
         data = self._readAPI(url)
 
@@ -268,20 +269,20 @@ class GitHubCity:
             total_pages = int(total_count / 100) + 1
             page += 1
 
+
+    def getCityUsers(self):
+        """Get all the users from the city.
+        """
+        self._launchThreads()
+        for i in self._intervals:
+            self._getPeriodUsers(i[0], i[1])
+
         self._fin = True
 
         for t in self._threads:
             t.join()
         self._fin = False
-
-
-    def getCityUsers(self):
-        """Get all the users from the city.
-        """
-        comprobation = self._readAPI(self._getURL())
-        for i in self._intervals:
-            self._getPeriodUsers(i[0], i[1])
-
+        self._threads = set()
 
 
     def _validInterval(self, start, finish):
