@@ -104,9 +104,9 @@ class GitHubUser:
 
         #Contributions, longest streak and current streak
         contributions_raw = web.find_all('span',{'class':'contrib-number'})
-        self._contributions = int(contributions_raw[0].text.split(" ")[0].replace(",",""))
-        self._longestStreak = int(contributions_raw[1].text.split(" ")[0].replace(",",""))
-        self._currentStreak = int(contributions_raw[2].text.split(" ")[0].replace(",",""))
+        #self._contributions = int(contributions_raw[0].text.split(" ")[0].replace(",",""))
+        #self._longestStreak = int(contributions_raw[1].text.split(" ")[0].replace(",",""))
+        #self._currentStreak = int(contributions_raw[2].text.split(" ")[0].replace(",",""))
 
         #Language
         self._language = web.find("meta", {"name":"description"})['content'].split(" ")[6]
@@ -118,7 +118,7 @@ class GitHubUser:
 
         #Followers
         vcard = web.find_all("strong", {"class":"vcard-stat-count"})
-        self._followers = int(vcard[0].text)
+        #self._followers = int(vcard[0].text)
 
         #Location
         self._location = web.find("li", {"itemprop":"homeLocation"}).text
@@ -160,9 +160,11 @@ class GitHubUser:
                 code = response.code
                 time.sleep(0.01)
             except HTTPError as e:
+                print("problema")
                 time.sleep(5)
                 code = e.code
             except URLError as e:
                 time.sleep(5)
+                print("problema 12")
                 code = 0
         return response.read().decode('utf-8')
