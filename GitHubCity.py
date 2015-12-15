@@ -32,15 +32,15 @@ The MIT License (MIT)
 
 import urllib.request
 import threading
-import concurrent.futures
 import datetime
 import calendar
 import time
-from multiprocessing import Queue
+import queue
 import json
 from urllib.error import HTTPError
 from dateutil.relativedelta import relativedelta
 import os
+from multiprocessing import Lock
 import sys
 import logging
 import coloredlogs
@@ -96,7 +96,7 @@ class GitHubCity:
             raise Exception("No GitHub Secret inserted")
         self._githubSecret = githubSecret
 
-        self._names = Queue()
+        self._names = queue.Queue()
         self._myusers = set()
         self._excluded = set()
 
@@ -115,6 +115,9 @@ class GitHubCity:
 
         self._fin = False
 
+        self._l = Lock()
+        self._lo = Lock()
+
 
     def _addUser(self, new_user):
         """Add new users to the list (private).
@@ -128,9 +131,9 @@ class GitHubCity:
 
         """
         if not new_user in self._myusers and not new_user in self._excluded:
+            self._myusers.add(new_user)
             myNewUser = GitHubUser(new_user)
             myNewUser.getData()
-            self._myusers.add(new_user)
             self._dataUsers.append(myNewUser)
             self._logger.debug("NEW USER "+new_user+" "+str(len(self._dataUsers)+1)+" "+\
             threading.current_thread().name)
@@ -212,19 +215,21 @@ class GitHubCity:
                 This method is private.
 
         """
-        time.sleep(1)
+        time.sleep(2)
         while not self._fin or not self._names.empty():
-            new_user = self._names.get()
-            if new_user:
+            self._l.acquire()
+            try:
+                new_user = self._names.get(False)
+            except queue.Empty:
+                self._l.release()
+            else:
+                self._l.release()
                 self._addUser(new_user)
                 self._logger.debug(str(self._names.qsize())+" users to process")
-                new_user = None
-            elif not new_user or self._names.empty():
-                return
 
 
 
-    def _launchThreads(self):
+    def _launchThreads(self, numThreads):
         """Launch some threads and call to 'processUsers' (private)
 
         Note:
@@ -232,7 +237,7 @@ class GitHubCity:
 
         """
         i = 0
-        while i<25:
+        while i<numThreads:
             i+=1
             newThr = threading.Thread(target=self._processUsers)
             newThr.setDaemon(True)
@@ -273,7 +278,20 @@ class GitHubCity:
     def getCityUsers(self):
         """Get all the users from the city.
         """
-        self._launchThreads()
+        self._fin = False
+        self._threads = set()
+
+        comprobationURL = self._getURL()
+        comprobationData = self._readAPI(comprobationURL)
+
+        if comprobationData["total_count"]>1000:
+            self._launchThreads(150)
+        elif comprobationData["total_count"]>100:
+            self._launchThreads(10)
+        else:
+            self._launchThreads(2)
+
+
         for i in self._intervals:
             self._getPeriodUsers(i[0], i[1])
 
@@ -281,8 +299,7 @@ class GitHubCity:
 
         for t in self._threads:
             t.join()
-        self._fin = False
-        self._threads = set()
+
 
 
     def _validInterval(self, start, finish):
