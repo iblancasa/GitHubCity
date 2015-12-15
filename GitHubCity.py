@@ -284,12 +284,7 @@ class GitHubCity:
         comprobationURL = self._getURL()
         comprobationData = self._readAPI(comprobationURL)
 
-        if comprobationData["total_count"]>1000:
-            self._launchThreads(150)
-        elif comprobationData["total_count"]>100:
-            self._launchThreads(10)
-        else:
-            self._launchThreads(2)
+        self._launchThreads(20)
 
 
         for i in self._intervals:
