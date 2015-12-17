@@ -104,9 +104,9 @@ class GitHubUser:
 
         #Contributions, longest streak and current streak
         contributions_raw = web.find_all('span',{'class':'contrib-number'})
-        #self._contributions = int(contributions_raw[0].text.split(" ")[0].replace(",",""))
-        #self._longestStreak = int(contributions_raw[1].text.split(" ")[0].replace(",",""))
-        #self._currentStreak = int(contributions_raw[2].text.split(" ")[0].replace(",",""))
+        self._contributions = int(contributions_raw[0].text.split(" ")[0].replace(",",""))
+        self._longestStreak = int(contributions_raw[1].text.split(" ")[0].replace(",",""))
+        self._currentStreak = int(contributions_raw[2].text.split(" ")[0].replace(",",""))
 
         #Language
         self._language = web.find("meta", {"name":"description"})['content'].split(" ")[6]
@@ -118,7 +118,10 @@ class GitHubUser:
 
         #Followers
         vcard = web.find_all("strong", {"class":"vcard-stat-count"})
-        #self._followers = int(vcard[0].text)
+        if "k" in vcard[0].text:
+            self._followers = int(float(vcard[0].text[:-1].replace('\.',','))*1000)
+        else:
+            self._followers = int(vcard[0].text)
 
         #Location
         self._location = web.find("li", {"itemprop":"homeLocation"}).text
