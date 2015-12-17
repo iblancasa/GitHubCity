@@ -31,6 +31,7 @@ The MIT License (MIT)
 """
 
 import urllib.request
+import urllib.parse
 import threading
 import datetime
 import calendar
@@ -203,11 +204,11 @@ class GitHubCity:
         """
         if not start_date or not final_date:
             url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
-                "&order=desc&q=sort:joined+type:user+location:" + self._city + \
+                "&order=desc&q=sort:joined+type:user+location:" + urllib.parse.quote(self._city) + \
                 "&sort=joined&order=asc&per_page=100&page=" + str(page)
         else:
             url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
-                "&order=desc&q=sort:joined+type:user+location:" + self._city + \
+                "&order=desc&q=sort:joined+type:user+location:" + urllib.parse.quote(self._city) + \
                 "+created:" + start_date.strftime("%Y-%m-%d") +\
                 ".." + final_date.strftime("%Y-%m-%d") +\
                 "&sort=joined&order="+order+"&per_page=100&page=" + str(page)
