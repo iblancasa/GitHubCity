@@ -163,11 +163,14 @@ class GitHubUser:
                 code = response.code
                 time.sleep(0.01)
             except HTTPError as e:
-                print("problema")
-                time.sleep(5)
                 code = e.code
+                if code==404:
+                    raise Exception("User was not found")
+                    return
             except URLError as e:
-                time.sleep(5)
-                print("problema 12")
+                if code==404:
+                    raise Exception("User was not found")
+                    return
+                time.sleep(3)
                 code = 0
         return response.read().decode('utf-8')
