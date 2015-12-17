@@ -30,7 +30,7 @@ The MIT License (MIT)
 
 import nose
 from nose import tools
-from nose.tools import eq_, ok_, assert_raises
+from nose.tools import *
 
 import sys
 import os
@@ -85,11 +85,17 @@ def testGetters():
     eq_(user._numRepos, user.getNumberOfRepositories(),"numRepos getter is not correctly")
     eq_(user._stars, user.getStars(),"Stars getter is not correctly")
 
+@raises(Exception)
+def testNoUser():
+    """Test when a false user is inserted"""
+    falseUser = GitHubUser("shurmanicop")
+    assert_raises(Exception,falseUser.getData())
+
 def testLotOfRequest():
     """Test if request are completed when server says: 'no more' """
     global user
     i = 0
-    while i<50:
+    while i<80:
         user._contributions = 0
         user.getData()
         i+=1

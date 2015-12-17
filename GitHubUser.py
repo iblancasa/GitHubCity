@@ -176,13 +176,11 @@ class GitHubUser:
                 time.sleep(0.01)
             except HTTPError as e:
                 code = e.code
-                if code==404:
-                    raise Exception("User was not found")
-                    return
+                if code == 404:
+                    break;
             except URLError as e:
-                if code==404:
-                    raise Exception("User was not found")
-                    return
                 time.sleep(3)
-                code = 0
+
+        if code == 404:
+                raise Exception("User was not found")
         return response.read().decode('utf-8')
