@@ -144,7 +144,7 @@ class GitHubCity:
 
         Note:
             This method is private.
-            If max number of request is reached, method will stop 1 min.
+            If max number of request is reached, method will some time (header says).
 
         Args:
             url (str): URL to query.
@@ -160,6 +160,7 @@ class GitHubCity:
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
                'Accept': 'application/vnd.github.v3.text-match+json'
                }
+        errors = 0
         while code != 200:
             req = urllib.request.Request(url, headers=hdr)
             self._logger.debug("Getting data from "+url)
@@ -167,10 +168,15 @@ class GitHubCity:
                 response = urllib.request.urlopen(req)
                 code = response.code
             except urllib.error.URLError as e:
-                reset = int(e.getheader("X-RateLimit-Reset"))
-                now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
-                self._logger.warning("Limit of API. Wait: "+str(reset - now_sec)+" secs")
-                time.sleep(reset - now_sec)
+                if hasattr(e,"getheader"):
+                    reset = int(e.getheader("X-RateLimit-Reset"))
+                    now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
+                    self._logger.warning("Limit of API. Wait: "+str(reset - now_sec)+" secs")
+                    time.sleep(reset - now_sec)
+                else:
+                    errors+=1
+                    if errors == 3:
+                        return
                 code = e.code
 
         data = json.loads(response.read().decode('utf-8'))
@@ -217,12 +223,16 @@ class GitHubCity:
                 This method is private.
 
         """
+        while(self._names.empty()):
+            pass
+
         while not self._fin or not self._names.empty():
             self._l.acquire()
             try:
                 new_user = self._names.get(False)
             except queue.Empty:
                 self._l.release()
+                return
             else:
                 self._l.release()
                 self._addUser(new_user)
