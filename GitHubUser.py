@@ -150,6 +150,18 @@ class GitHubUser:
         self._stars = stars
 
     def _getDataFromURL(self, url):
+        """Read HTML data from an user GitHub profile (private).
+
+        Note:
+            This method is private.
+            If max number of request is reached, method will stop some time.
+
+        Args:
+            url (str): URL to query.
+
+        Returns:
+            A str with the webpage
+        """
         code = 0
 
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
