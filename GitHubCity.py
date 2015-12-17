@@ -62,6 +62,7 @@ class GitHubCity:
         _names (Queue): Queue with all users that we still have to process.
         _threads (set): Set of active Threads.
         _logger (logger): Logger.
+        _l (Lock): lock to solve problems with threads.
     """
 
     def __init__(self, city, githubID, githubSecret, excludedJSON=None, debug=False):
@@ -99,9 +100,7 @@ class GitHubCity:
         self._names = queue.Queue()
         self._myusers = set()
         self._excluded = set()
-
         self._dataUsers = []
-
         self._threads = set()
 
         if excludedJSON:
@@ -116,7 +115,7 @@ class GitHubCity:
         self._fin = False
 
         self._l = Lock()
-        self._lo = Lock()
+
 
 
     def _addUser(self, new_user):
@@ -137,6 +136,7 @@ class GitHubCity:
             self._dataUsers.append(myNewUser)
             self._logger.debug("NEW USER "+new_user+" "+str(len(self._dataUsers)+1)+" "+\
             threading.current_thread().name)
+
 
 
     def _readAPI(self, url):
@@ -178,6 +178,7 @@ class GitHubCity:
         return data
 
 
+
     def _getURL(self, page=1, start_date=None, final_date=None,order="asc"):
         """Get the API's URL to query to get data about users (private).
 
@@ -208,6 +209,7 @@ class GitHubCity:
         return url
 
 
+
     def _processUsers(self):
         """Process users of the queue (get from the queue an add user) (private)
 
@@ -215,7 +217,6 @@ class GitHubCity:
                 This method is private.
 
         """
-        time.sleep(2)
         while not self._fin or not self._names.empty():
             self._l.acquire()
             try:
@@ -243,6 +244,8 @@ class GitHubCity:
             newThr.setDaemon(True)
             self._threads.add(newThr)
             newThr.start()
+
+
 
     def _getPeriodUsers(self, start_date, final_date):
         """Get all the users given a period (private).
@@ -275,6 +278,7 @@ class GitHubCity:
             page += 1
 
 
+
     def getCityUsers(self):
         """Get all the users from the city.
         """
@@ -285,7 +289,6 @@ class GitHubCity:
         comprobationData = self._readAPI(comprobationURL)
 
         self._launchThreads(20)
-
 
         for i in self._intervals:
             self._getPeriodUsers(i[0], i[1])
@@ -323,6 +326,7 @@ class GitHubCity:
             finish.strftime("%Y-%m-%d"))
 
 
+
     def calculateBestIntervals(self):
         """Calcules valid intervals of a city (with less than 1000 users)
         """
@@ -334,9 +338,10 @@ class GitHubCity:
         self._logger.info("Total number of intervals: "+ str(len(self._intervals)))
 
 
+
     def getTotalUsers(self):
         """Get the number of calculated users
         Returns:
             Number (int) of calculated users
         """
-        return self._dataUsers
+        return len(self._dataUsers)
