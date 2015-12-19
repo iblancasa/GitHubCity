@@ -30,7 +30,9 @@ The MIT License (MIT)
 import time
 from bs4 import BeautifulSoup
 import urllib.request
+from urllib.error import HTTPError, URLError
 import datetime, dateutil.parser
+import re
 
 class GitHubUser:
     """Manager of a GitHub User
@@ -116,7 +118,10 @@ class GitHubUser:
 
         #Followers
         vcard = web.find_all("strong", {"class":"vcard-stat-count"})
-        self._followers = int(vcard[0].text)
+        if "k" in vcard[0].text:
+            self._followers = int(float(vcard[0].text[:-1].replace('\.',','))*1000)
+        else:
+            self._followers = int(vcard[0].text)
 
         #Location
         self._location = web.find("li", {"itemprop":"homeLocation"}).text
@@ -137,12 +142,26 @@ class GitHubUser:
 
         #Number of total stars
         stars = 0
+        non_decimal = re.compile(r'[^\d]+')
+
         for repo in repos:
-            stars += int(repo.text)
+            stars += int(non_decimal.sub('', repo.text))
 
         self._stars = stars
 
     def _getDataFromURL(self, url):
+        """Read HTML data from an user GitHub profile (private).
+
+        Note:
+            This method is private.
+            If max number of request is reached, method will stop some time.
+
+        Args:
+            url (str): URL to query.
+
+        Returns:
+            A str with the webpage
+        """
         code = 0
 
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
@@ -154,8 +173,14 @@ class GitHubUser:
             try:
                 response = urllib.request.urlopen(req)
                 code = response.code
-
-            except urllib.error.HTTPError as e:
-                time.sleep(5)
+                time.sleep(0.01)
+            except HTTPError as e:
                 code = e.code
+                if code == 404:
+                    break;
+            except URLError as e:
+                time.sleep(3)
+
+        if code == 404:
+                raise Exception("User was not found")
         return response.read().decode('utf-8')
