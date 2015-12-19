@@ -1,3 +1,4 @@
 python-dateutil==2.4.2
 beautifulsoup4==4.4.1
 lxml==3.4.2
+coloredlogs==5.0
