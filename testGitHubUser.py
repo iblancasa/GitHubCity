@@ -91,12 +91,15 @@ def testNoUser():
     falseUser = GitHubUser("shurmanicop")
     assert_raises(Exception,falseUser.getData())
 
+'''
+#This test is deactivated to improve perfomance. Run only local
 def testLotOfRequest():
     """Test if request are completed when server says: 'no more' """
     global user
     i = 0
-    while i<80:
+    while i<40:
         user._contributions = 0
         user.getData()
         i+=1
     ok_(user._contributions!=0, "Lot of request fail")
+'''

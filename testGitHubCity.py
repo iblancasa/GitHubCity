@@ -138,17 +138,6 @@ def test_readAPI():
     ok_("items" in data, "Items are not correct")
 
 
-def test_getBestIntervals():
-    """Get best intervals to query"""
-
-    cityB = GitHubCity("Barcelona", idGH, secretGH)
-    cityB.calculateBestIntervals()
-
-    for i in cityB._intervals:
-        ok_(i[0]!="" and i[0]!=None, "First part of interval is not correct")
-        ok_(i[1]!="" and i[0]!=None, "First part of interval is not correct")
-
-
 def test_addUser():
     """Add new users to the list"""
     global cityA
@@ -162,14 +151,24 @@ def test_addUser():
     eq_(len(cityA._dataUsers), 1, "User was added two times to the dataUsers list")
 
 
+def test_getBestIntervals():
+    """Get best intervals to query"""
+    global cityA
+    cityA = GitHubCity("Barcelona", idGH, secretGH, debug=True)
+    cityA.calculateBestIntervals()
+
+    for i in cityA._intervals:
+        ok_(i[0]!="" and i[0]!=None, "First part of interval is not correct")
+        ok_(i[1]!="" and i[0]!=None, "First part of interval is not correct")
+
+
 
 def test_getAllUsers():
     """Get all users from a city
     """
-    global idGH, secretGH, cityA
-    cityA = GitHubCity("Granada", idGH, secretGH,debug=False)
-    cityA.calculateBestIntervals()
+    global cityA
     cityA.getCityUsers()
+    ok_(len(cityA._myusers)>=len(cityA._dataUsers),"Get all users is not ok")
 
 
 def test_excludeUsers():
