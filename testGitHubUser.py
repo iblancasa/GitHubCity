@@ -35,8 +35,8 @@ from nose.tools import *
 import sys
 import os
 import json
-sys.path.append(os.getcwd())
-from GitHubUser import *
+sys.path.append(os.getcwd()+"/githubcity")
+from GitHubUser import GitHubUser
 import datetime
 
 ###########################################################

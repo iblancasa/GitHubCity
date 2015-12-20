@@ -34,8 +34,9 @@ from nose.tools import eq_, ok_, assert_raises
 import coloredlogs
 import sys
 import os
+import datetime
 import json
-sys.path.append(os.getcwd())
+sys.path.append(os.getcwd()+"/githubcity")
 from GitHubCity import *
 
 ###########################################################
