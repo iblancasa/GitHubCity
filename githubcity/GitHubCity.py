@@ -120,7 +120,8 @@ class GitHubCity:
         self._l = Lock()
 
 
-
+    def __str__(self):
+        return str(self.getConfig())
 
     def readConfig(self, config):
         self._city = config["name"]
