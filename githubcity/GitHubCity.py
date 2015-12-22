@@ -97,20 +97,26 @@ class GitHubCity:
 
         if config:
             self.readConfig(config)
+            print(config)
         else:
             self._city = city
             self._locations  = locations
 
+            if not self._locations:
+                self._locations = []
+                if self._city:
+                    self._locations.append(self._city)
+
+            self._excluded = set()
             if excludedJSON:
                 for e in excludedJSON:
                     self._excluded.add(e)
 
-
         self._names = queue.Queue()
         self._myusers = set()
-        self._excluded = set()
         self._dataUsers = []
         self._threads = set()
+        self._addLocationsToURL(self._locations)
         self._logger = logging.getLogger("GitHubCity")
 
         if debug:
@@ -123,13 +129,24 @@ class GitHubCity:
     def __str__(self):
         return str(self.getConfig())
 
+    def _addLocationsToURL(self, locations):
+        self._urlLocations = ""
+
+        for l in self._locations:
+            print(type(l))
+            self._urlLocations += "+location:" + str(urllib.parse.quote(l))
+
+
     def readConfig(self, config):
         self._city = config["name"]
         self._intervals = config["intervals"]
         self._lastDay = config["last_date"]
+        self._locations = config["locations"]
         excluded = config["excludedUsers"]
         for e in excluded:
             self._excluded.add(e)
+
+        self._addLocationsToURL(self._locations)
 
 
     def readConfigFromJSON(self, fileName):
@@ -217,11 +234,11 @@ class GitHubCity:
         """
         if not start_date or not final_date:
             url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
-                "&order=desc&q=sort:joined+type:user+location:" + urllib.parse.quote(self._city) + \
+                "&order=desc&q=sort:joined+type:user" + self._urlLocations + \
                 "&sort=joined&order=asc&per_page=100&page=" + str(page)
         else:
             url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
-                "&order=desc&q=sort:joined+type:user+location:" + urllib.parse.quote(self._city) + \
+                "&order=desc&q=sort:joined+type:user" + self._urlLocations + \
                 "+created:" + start_date +\
                 ".." + final_date +\
                 "&sort=joined&order="+order+"&per_page=100&page=" + str(page)
@@ -425,6 +442,8 @@ class GitHubCity:
 
         for e in self._excluded:
             config["excludedUsers"].append(e)
+
+        config["locations"]=self._locations
         return config
 
     def configToJson(self, fileName):
