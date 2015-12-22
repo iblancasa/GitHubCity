@@ -60,13 +60,15 @@ class GitHubCity:
         _githubSecret (str): secretGH of your GitHub application.
         _dataUsers (List[GitHubUser]): the list of GitHub users.
         _excluded (set): list of names of excluded users.
+        _lastDay (str): day of last interval
         _names (Queue): Queue with all users that we still have to process.
         _threads (set): Set of active Threads.
         _logger (logger): Logger.
         _l (Lock): lock to solve problems with threads.
     """
 
-    def __init__(self, city, githubID, githubSecret, excludedJSON=None, debug=False):
+    def __init__(self, githubID, githubSecret, config=None, city=None, locations=None,
+                excludedJSON=None, debug=False):
         """Constructor of the class.
 
         Note:
@@ -85,11 +87,6 @@ class GitHubCity:
 
         """
 
-        if city==None:
-            raise Exception("City is not defined")
-
-        self._city = city
-
         if githubID==None:
             raise Exception("No GitHub ID inserted")
         self._githubID = githubID
@@ -98,26 +95,46 @@ class GitHubCity:
             raise Exception("No GitHub Secret inserted")
         self._githubSecret = githubSecret
 
+        if config:
+            self.readConfig(config)
+        else:
+            self._city = city
+            self._locations  = locations
+
+            if excludedJSON:
+                for e in excludedJSON:
+                    self._excluded.add(e)
+
+
         self._names = queue.Queue()
         self._myusers = set()
         self._excluded = set()
         self._dataUsers = []
         self._threads = set()
-
-        if excludedJSON:
-            for e in excludedJSON:
-                self._excluded.add(e["name"])
-
         self._logger = logging.getLogger("GitHubCity")
 
         if debug:
             coloredlogs.install(level='DEBUG')
 
         self._fin = False
-
         self._l = Lock()
 
 
+
+
+    def readConfig(self, config):
+        self._city = config["name"]
+        self._intervals = config["intervals"]
+        self._lastDay = config["last_date"]
+        excluded = config["excludedUsers"]
+        for e in excluded:
+            self._excluded.add(e)
+
+
+    def readConfigFromJSON(self, fileName):
+        with open(fileName) as data_file:
+            data = json.load(data_file)
+        self.readConfig(data)
 
     def _addUser(self, new_user):
         """Add new users to the list (private).
@@ -204,8 +221,8 @@ class GitHubCity:
         else:
             url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
                 "&order=desc&q=sort:joined+type:user+location:" + urllib.parse.quote(self._city) + \
-                "+created:" + start_date.strftime("%Y-%m-%d") +\
-                ".." + final_date.strftime("%Y-%m-%d") +\
+                "+created:" + start_date +\
+                ".." + final_date +\
                 "&sort=joined&order="+order+"&per_page=100&page=" + str(page)
 
         return url
@@ -265,8 +282,7 @@ class GitHubCity:
             final_date (datetime.date): final date of the range to search users.
 
         """
-        self._logger.info("Getting users from "+start_date.strftime("%Y-%m-%d")+" to "+\
-        final_date.strftime("%Y-%m-%d"))
+        self._logger.info("Getting users from " + start_date + " to " + final_date)
 
         url = self._getURL(1, start_date, final_date)
         data = self._readAPI(url)
@@ -321,13 +337,13 @@ class GitHubCity:
             Valid periods are added to the private _intervals attribute.
 
         """
-        data = self._readAPI(self._getURL(1,start,finish))
+        data = self._readAPI(self._getURL(1,start.strftime("%Y-%m-%d"),finish.strftime("%Y-%m-%d")))
         if data["total_count"]>=1000:
             middle = start + (finish - start)/2
             self._validInterval(start,middle)
             self._validInterval(middle,finish)
         else:
-            self._intervals.add((start,finish))
+            self._intervals.append([start.strftime("%Y-%m-%d"),finish.strftime("%Y-%m-%d")])
             self._logger.debug("Valid interval: "+start.strftime("%Y-%m-%d")+" to "+\
             finish.strftime("%Y-%m-%d"))
 
@@ -336,13 +352,12 @@ class GitHubCity:
     def calculateBestIntervals(self):
         """Calcules valid intervals of a city (with less than 1000 users)
         """
-        self._intervals = None
         comprobation = self._readAPI(self._getURL())
-        self._intervals = set()
+        self._intervals = []
         self._bigCity = True
         self._validInterval(datetime.date(2008, 1, 1), datetime.datetime.now().date())
         self._logger.info("Total number of intervals: "+ str(len(self._intervals)))
-
+        self._lastDay = datetime.datetime.now().date().strftime("%Y-%m-%d")
 
 
     def getTotalUsers(self):
@@ -351,3 +366,67 @@ class GitHubCity:
             Number (int) of calculated users
         """
         return len(self._dataUsers)
+
+
+
+    def getSortUsers(self, order):
+        """Returns a list with sorted users.
+
+        Args:
+            order (str): a str with one of these values (field to sort by).
+                - contributions
+                - name
+                - lstreak
+                - cstreak
+                - language
+                - followers
+                - join:
+                - organizations
+                - repositories
+                - stars
+
+        Returns:
+            str with a list of GitHubUsers by the field indicate. If
+            an invalid field is given, the result will be None
+
+        """
+        if order == "contributions":
+            self._dataUsers.sort(key=lambda u: u.getContributions(), reverse=True)
+        elif order == "name":
+            self._dataUsers.sort(key=lambda u: u.getName(), reverse=True)
+        elif order == "lstreak":
+            self._dataUsers.sort(key=lambda u: u.getLongestStreak(), reverse=True)
+        elif order == "cstreak":
+            self._dataUsers.sort(key=lambda u: u.getCurrentStreak(), reverse=True)
+        elif order == "language":
+            self._dataUsers.sort(key=lambda u: u.getLanguage(), reverse=True)
+        elif order == "followers":
+            self._dataUsers.sort(key=lambda u: u.getFollowers(), reverse=True)
+        elif order == "join":
+            self._dataUsers.sort(key=lambda u: u.getJoin(), reverse=True)
+        elif order == "organizations":
+            self._dataUsers.sort(key=lambda u: u.getOrganizations(), reverse=True)
+        elif order == "respositories":
+            self._dataUsers.sort(key=lambda u: u.getNumberOfRepositories(), reverse=True)
+        elif order == "stars":
+            self._dataUsers.sort(key=lambda u: u.getStars(), reverse=True)
+        else:
+            return None
+        return self._dataUsers
+
+
+    def getConfig(self):
+        config = {}
+        config["name"] = self._city
+        config["intervals"] = self._intervals
+        config["last_date"] = self._lastDay
+        config["excludedUsers"]=[]
+
+        for e in self._excluded:
+            config["excludedUsers"].append(e)
+        return config
+
+    def configToJson(self, fileName):
+        config = self.getConfig()
+        with open(fileName, "w") as outfile:
+            json.dump(config, outfile, indent=4, sort_keys=True)
