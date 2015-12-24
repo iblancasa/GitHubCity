@@ -68,7 +68,7 @@ class GitHubCity:
     """
 
     def __init__(self, githubID, githubSecret, config=None, city=None, locations=None,
-                excludedJSON=None, debug=False):
+                excludedUsers=None, excludedLocations=None, debug=False):
         """Constructor of the class.
 
         Note:
@@ -79,7 +79,7 @@ class GitHubCity:
             city (str): Name of the city you want to search about.
             githubID (str): ID of your GitHub application.
             githubSecret (str): Secret of your GitHub application.
-            excludedJSON (dir): Excluded users of the ranking (see schemaExcluded.json)
+            excludedUsers (dir): Excluded users of the ranking (see schemaExcluded.json)
             debug (bool): Show a log in your terminal. Default: False
 
         Returns:
@@ -97,7 +97,6 @@ class GitHubCity:
 
         if config:
             self.readConfig(config)
-            print(config)
         else:
             self._city = city
             self._locations  = locations
@@ -108,9 +107,15 @@ class GitHubCity:
                     self._locations.append(self._city)
 
             self._excluded = set()
-            if excludedJSON:
-                for e in excludedJSON:
+            if excludedUsers:
+                for e in excludedUsers:
                     self._excluded.add(e)
+
+
+            self._excludedLocations = set()
+            if excludedLocations:
+                for e in excludedLocations:
+                    self._excludedLocations.add(e)
 
         self._names = queue.Queue()
         self._myusers = set()
@@ -133,7 +138,6 @@ class GitHubCity:
         self._urlLocations = ""
 
         for l in self._locations:
-            print(type(l))
             self._urlLocations += "+location:" + str(urllib.parse.quote(l))
 
 
@@ -142,9 +146,14 @@ class GitHubCity:
         self._intervals = config["intervals"]
         self._lastDay = config["last_date"]
         self._locations = config["locations"]
+
         excluded = config["excludedUsers"]
         for e in excluded:
             self._excluded.add(e)
+
+        excluded = config["excludedLocations"]
+        for e in excluded:
+            self._excludedLocations.add(e)
 
         self._addLocationsToURL(self._locations)
 
@@ -169,9 +178,12 @@ class GitHubCity:
             self._myusers.add(new_user)
             myNewUser = GitHubUser(new_user)
             myNewUser.getData()
-            self._dataUsers.append(myNewUser)
-            self._logger.debug("NEW USER "+new_user+" "+str(len(self._dataUsers)+1)+" "+\
-            threading.current_thread().name)
+
+            userLoc = myNewUser.getLocation()
+            if not any(s in userLoc for s in self._excludedLocations):
+                self._dataUsers.append(myNewUser)
+                self._logger.debug("NEW USER "+new_user+" "+str(len(self._dataUsers)+1)+" "+\
+                threading.current_thread().name)
 
 
 
@@ -439,9 +451,13 @@ class GitHubCity:
         config["intervals"] = self._intervals
         config["last_date"] = self._lastDay
         config["excludedUsers"]=[]
+        config["excludedLocations"]=[]
 
         for e in self._excluded:
             config["excludedUsers"].append(e)
+
+        for e in self._excludedLocations:
+            config["excludedLocations"].append(e)
 
         config["locations"]=self._locations
         return config
