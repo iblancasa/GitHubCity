@@ -160,6 +160,10 @@ class GitHubCity:
 
         self._addLocationsToURL(self._locations)
 
+        self._validInterval(self._lastDay, datetime.datetime.now().date().strftime("%Y-%m-%d"))
+
+
+
 
     def readConfigFromJSON(self, fileName):
         with open(fileName) as data_file:
