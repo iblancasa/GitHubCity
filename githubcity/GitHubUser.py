@@ -56,6 +56,24 @@ class GitHubUser:
         """
         self._name = name
 
+    def export(self):
+        data = {}
+        data["name"] = self.getName()
+        data["contributions"] = self.getContributions()
+        data["longestStreak"] = self.getLongestStreak()
+        data["currentStreak"] = self.getCurrentStreak()
+        data["language"] = self.getLanguage()
+        data["avatar"] = self.getAvatar()
+        data["followers"] = self.getFollowers()
+        data["join"] = self.getJoin()
+        data["organizations"] = self.getOrganizations()
+        data["repositories"] = self.getNumberOfRepositories()
+        data["stars"] = self.getStars()
+
+        return data
+
+
+
     def getName(self):
         return self._name
 

@@ -482,3 +482,21 @@ class GitHubCity:
         config = self.getConfig()
         with open(fileName, "w") as outfile:
             json.dump(config, outfile, indent=4, sort_keys=True)
+
+    def export(self):
+        exportedData = {}
+
+        dataUsers = self.getSortUsers("contributions")
+        exportedUsers = []
+
+        for u in dataUsers:
+            exportedUsers.append(u.export())
+
+        exportedData["users"] = exportedUsers
+
+        with open("githubcity/template") as template_file:
+            template_raw = template_file.read()
+
+        template = pystache.parse(template_raw)
+        renderer = pystache.Renderer()
+        print(renderer.render(template, exportedData))
