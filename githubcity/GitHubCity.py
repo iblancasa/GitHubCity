@@ -128,7 +128,9 @@ class GitHubCity:
             coloredlogs.install(level='DEBUG')
 
         self._fin = False
-        self._l = Lock()
+        self._lockGetUser = Lock()
+        self._lockReadAddUser = Lock()
+
 
 
     def __str__(self):
@@ -174,7 +176,9 @@ class GitHubCity:
             new_user (str): name of a GitHub user to include in the ranking
 
         """
+        self._lockReadAddUser.acquire()
         if not new_user in self._myusers and not new_user in self._excluded:
+            self._lockReadAddUser.release()
             self._myusers.add(new_user)
             myNewUser = GitHubUser(new_user)
             myNewUser.getData()
@@ -184,6 +188,8 @@ class GitHubCity:
                 self._dataUsers.append(myNewUser)
                 self._logger.debug("NEW USER "+new_user+" "+str(len(self._dataUsers)+1)+" "+\
                 threading.current_thread().name)
+        else:
+            self._lockReadAddUser.release()
 
 
 
@@ -270,14 +276,14 @@ class GitHubCity:
             pass
 
         while not self._fin or not self._names.empty():
-            self._l.acquire()
+            self._lockGetUser.acquire()
             try:
                 new_user = self._names.get(False)
             except queue.Empty:
-                self._l.release()
+                self._lockGetUser.release()
                 return
             else:
-                self._l.release()
+                self._lockGetUser.release()
                 self._addUser(new_user)
                 self._logger.debug(str(self._names.qsize())+" users to process")
 
