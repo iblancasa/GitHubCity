@@ -37,6 +37,7 @@ import datetime
 import calendar
 import time
 import queue
+import pystache
 import json
 from urllib.error import HTTPError
 from dateutil.relativedelta import relativedelta
@@ -159,8 +160,10 @@ class GitHubCity:
             self._excludedLocations.add(e)
 
         self._addLocationsToURL(self._locations)
+        last = datetime.datetime.strptime(self._lastDay, "%Y-%m-%d")
+        today = datetime.datetime.now().date()
 
-        self._validInterval(self._lastDay, datetime.datetime.now().date().strftime("%Y-%m-%d"))
+        self._validInterval(last, today)
 
 
 
