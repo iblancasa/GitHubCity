@@ -100,6 +100,7 @@ class GitHubCity:
         else:
             self._city = city
             self._locations  = locations
+            self._intervals=[]
 
             if not self._locations:
                 self._locations = []
@@ -340,6 +341,9 @@ class GitHubCity:
     def getCityUsers(self):
         """Get all the users from the city.
         """
+        if len(self._intervals)==0:
+            self.calculateBestIntervals()
+
         self._fin = False
         self._threads = set()
 
@@ -389,7 +393,6 @@ class GitHubCity:
         """Calcules valid intervals of a city (with less than 1000 users)
         """
         comprobation = self._readAPI(self._getURL())
-        self._intervals = []
         self._bigCity = True
         self._validInterval(datetime.date(2008, 1, 1), datetime.datetime.now().date())
         self._logger.info("Total number of intervals: "+ str(len(self._intervals)))
