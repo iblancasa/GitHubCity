@@ -34,8 +34,9 @@ from nose.tools import eq_, ok_, assert_raises
 import coloredlogs
 import sys
 import os
+import datetime
 import json
-sys.path.append(os.getcwd())
+sys.path.append(os.getcwd()+"/githubcity")
 from GitHubCity import *
 
 ###########################################################
@@ -43,18 +44,32 @@ from GitHubCity import *
 ###########################################################
 idGH = None
 secretGH = None
-
-cityA = None
-
+city = None
 url = None
-excluded = None
+config = None
+
 
 def setup():
-    global dataExclude, excluded
-    os.environ['TZ'] = 'Europe/London'
-    fileJSON = open('testExclude.json')
-    excluded = json.loads(fileJSON.read())
-    fileJSON.close()
+    global config
+    config = {
+        "excludedLocations": [
+            "Granada"
+        ],
+        "excludedUsers": [
+            "vrivas"
+        ],
+        "intervals": [
+            [
+                "2008-01-01",
+                "2015-12-24"
+            ]
+        ],
+        "last_date": "2015-12-24",
+        "locations": [
+            "Jaén"
+        ],
+        "name": "Jaen"
+    }
 
 def test_githubKeys():
     """GitHub keys are inserted correctly
@@ -74,65 +89,70 @@ def test_githubKeys():
 def test_classCreation():
     """GitHubCity instance is created correctly
     """
-    global idGH, secretGH
+    global idGH, secretGH, city, config
 
-    assert_raises(Exception,GitHubCity, None, None, None)
-    assert_raises(Exception,GitHubCity,"Granada", None, None)
-    assert_raises(Exception,GitHubCity,"Granada", "asdad78asdd48ad4", None,debug=False)
+    assert_raises(Exception,GitHubCity, None, None)
+    assert_raises(Exception,GitHubCity, "asdad78asdd48ad4",None)
+    assert_raises(Exception,GitHubCity, None, "asdad78asdd48ad4")
 
-    cityA = GitHubCity("Granada", idGH, secretGH, debug=True)
-    ok_(cityA!=None, "City was not created")
-    ok_(cityA._city!=None, "City name was not setting")
-    ok_(cityA._githubID!=None, "GitHub ID was not setting")
-    ok_(cityA._githubSecret!=None, "GitHub Secret was not setting")
-    eq_(cityA._githubID, os.environ.get('GH_ID'), "GitHub ID was not setting correctly")
-    eq_(cityA._githubSecret, os.environ.get('GH_SECRET'), "GitHub Secret was not setting correctly")
-    ok_(cityA._city!="", "City name is an empy str")
+    city = GitHubCity(idGH, secretGH, config=config)
+    ok_(city._intervals!=None, "City was not created correctly from config")
+
+    city = GitHubCity(idGH, secretGH, config=None,locations=["Granada"], city="Granada",
+        excludedUsers=["iblancasa"], excludedLocations=["Europe"], debug=True)
+    ok_(city._city!=None, "City was not created correctly")
     coloredlogs.install(level='CRITICAL')
+
+def test_loadConfiguration():
+    """Loading configuration from file
+    """
+    city = GitHubCity(idGH, secretGH)
+    city.readConfigFromJSON("testConfig.json")
+    ok_(city._city=="Jaen", "Configuration was not load correctly from JSON")
 
 
 def test_urlComposition():
     """URL's are composed correctly
     """
-    global url, cityA
-    cityA = GitHubCity("Granada", idGH, secretGH, debug=False)
-    url = cityA._getURL()
+    global url, city
+    url = city._getURL()
 
     expected_url = "https://api.github.com/search/users?client_id="+\
-    cityA._githubID + "&client_secret=" + cityA._githubSecret +\
-    "&order=desc&q=sort:joined+type:user+location:" + cityA._city + "&sort=joined&order=asc&per_page=100&page=1"
+    city._githubID + "&client_secret=" + city._githubSecret +\
+    "&order=desc&q=sort:joined+type:user+location:" + city._city + "&sort=joined&order=asc&per_page=100&page=1"
 
     eq_(url, expected_url, "URL is not well formed when there are not params " + url)
 
-    url = cityA._getURL(2)
+    url = city._getURL(2)
     expected_url = "https://api.github.com/search/users?client_id="+\
-    cityA._githubID + "&client_secret=" + cityA._githubSecret +\
-    "&order=desc&q=sort:joined+type:user+location:" + cityA._city + "&sort=joined&order=asc&per_page=100&page=2"
+    city._githubID + "&client_secret=" + city._githubSecret +\
+    "&order=desc&q=sort:joined+type:user+location:" + city._city + "&sort=joined&order=asc&per_page=100&page=2"
 
     eq_(url, expected_url, "URL is not well formed when there are 1 param (page) " + url)
 
 
     expected_url = "https://api.github.com/search/users?client_id="+\
-        cityA._githubID + "&client_secret=" + cityA._githubSecret +\
-        "&order=desc&q=sort:joined+type:user+location:"+ cityA._city +"+created:2008-01-01..2015-12-18"+\
+        city._githubID + "&client_secret=" + city._githubSecret +\
+        "&order=desc&q=sort:joined+type:user+location:"+ city._city +"+created:2008-01-01..2015-12-18"+\
         "&sort=joined&order=asc&per_page=100&page=2"
-    url = cityA._getURL(2,datetime.date(2008, 1, 1),datetime.date(2015, 12, 18))
+    url = city._getURL(2,"2008-01-01", "2015-12-18")
     eq_(url, expected_url, "URL is not well formed when there are 3 params (page and dates) " + url)
 
+
     expected_url = "https://api.github.com/search/users?client_id="+\
-        cityA._githubID + "&client_secret=" + cityA._githubSecret +\
-        "&order=desc&q=sort:joined+type:user+location:"+ cityA._city +"+created:2008-01-01..2015-12-18"+\
+        city._githubID + "&client_secret=" + city._githubSecret +\
+        "&order=desc&q=sort:joined+type:user+location:"+ city._city +"+created:2008-01-01..2015-12-18"+\
         "&sort=joined&order=desc&per_page=100&page=2"
-    url = cityA._getURL(2,datetime.date(2008, 1, 1),datetime.date(2015, 12, 18),"desc")
+    url = city._getURL(2,"2008-01-01", "2015-12-18","desc")
     eq_(url, expected_url, "URL is not well formed when there are 4 params (page, dates and sort) " + url)
 
 
 
 def test_readAPI():
     """Reading API"""
-    global cityA, url, data
+    global city, url, data
 
-    data = cityA._readAPI(url)
+    data = city._readAPI(url)
     ok_(data!=None, "Data received from API is None")
     ok_("total_count" in data, "Total_count is not correct")
     ok_("items" in data, "Items are not correct")
@@ -140,69 +160,117 @@ def test_readAPI():
 
 def test_addUser():
     """Add new users to the list"""
-    global cityA
+    global city
 
-    cityA._addUser("iblancasa")
-    eq_(len(cityA._myusers), 1, "User was not added to the names list")
-    eq_(len(cityA._dataUsers), 1, "User was not added to the dataUsers list")
+    city._addUser("nitehack")
+    eq_(len(city._myusers), 1, "User was not added to the names list")
+    eq_(len(city._dataUsers), 1, "User was not added to the dataUsers list")
 
-    cityA._addUser("iblancasa")
-    eq_(len(cityA._myusers), 1, "User was added two times to the names list")
-    eq_(len(cityA._dataUsers), 1, "User was added two times to the dataUsers list")
+    city._addUser("nitehack")
+    eq_(len(city._myusers), 1, "User was added two times to the names list")
+    eq_(len(city._dataUsers), 1, "User was added two times to the dataUsers list")
+
+    ok_("nitehack" in city._myusers,
+                  "Add new user was no completed correctly when there is an excluded list")
+
+    city._addUser("iblancasa")
+    ok_(not "iblancasa" in city._myusers,
+                     "User was added to the users list and he is in excluded list")
+
+    city._addUser("JJ")
+
+    for i in city._dataUsers:
+        ok_(i.getName() !="JJ", "User was added to the list when his location was excluded")
 
 
 def test_getBestIntervals():
     """Get best intervals to query"""
-    global cityA
-    cityA = GitHubCity("Barcelona", idGH, secretGH, debug=True)
-    cityA.calculateBestIntervals()
+    global city
+    city = GitHubCity(idGH, secretGH,city="Barcelona", debug=True)
+    city.calculateBestIntervals()
 
-    for i in cityA._intervals:
+    for i in city._intervals:
         ok_(i[0]!="" and i[0]!=None, "First part of interval is not correct")
-        ok_(i[1]!="" and i[0]!=None, "First part of interval is not correct")
 
+
+def test_strCity():
+    """Checking if str is correct
+    """
+    global city
+    ok_(isinstance(str(city),str), "Str of city is not correct")
 
 
 def test_getAllUsers():
     """Get all users from a city
     """
-    global cityA
-    cityA.getCityUsers()
-    ok_(len(cityA._myusers)>=len(cityA._dataUsers),"Get all users is not ok")
+    global idGH, secretGH, city
+    city.getCityUsers()
+    ok_(len(city._myusers)>=len(city._dataUsers), "Get all users is not ok")
 
-
-def test_excludeUsers():
-    """Excluded users that are excluded from the list
-    """
-    global idGH, secretGH, excluded, dataExclude, cityA
-
-    cityA = GitHubCity("Granada", idGH, secretGH, excluded)
-    cityA._addUser("nitehack")
-    cityA._addUser("iblancasa")
-
-    ok_("nitehack" in cityA._myusers,
-                  "Add new user was no completed correctly when there is an excluded list")
-    ok_(not "iblancasa" in cityA._myusers,
-                     "User was added to the users list and he is in excluded list")
-
+    smallCity = GitHubCity(idGH, secretGH, config=None,locations=["Ceuta"], city="Ceuta",
+    excludedUsers=[], excludedLocations=[], debug=True)
+    smallCity.getCityUsers()
+    ok_(len(smallCity._myusers)>=len(smallCity._dataUsers), "Get all users without calcule intervals\
+        before is correct")
 
 
 def test_getTotalUsers():
     """Total users number is correct
     """
-    global cityA
+    global city
 
-    users = cityA.getTotalUsers()
-    eq_(users,len(cityA._dataUsers), "Get users is not correct when there are users")
+    users = city.getTotalUsers()
+    eq_(users,len(city._dataUsers), "Get users is not correct when there are users")
+
+
+def test_getSortUsers():
+    """Getting sort users
+    """
+    global city
+    users = city.getSortedUsers("name")
+    ok_(users[0].getName() >= users[1].getName(), "Users are not sorted correctly -name")
+    users = city.getSortedUsers("lstreak")
+    ok_(users[0].getLongestStreak() >= users[1].getLongestStreak(), "Users are not sorted correctly -lstreak")
+    users = city.getSortedUsers("cstreak")
+    ok_(users[0].getCurrentStreak() >= users[1].getCurrentStreak(), "Users are not sorted correctly -cstreak")
+    users = city.getSortedUsers("language")
+    ok_(users[0].getLanguage() >= users[1].getLanguage(), "Users are not sorted correctly -language")
+    users = city.getSortedUsers("followers")
+    ok_(users[0].getFollowers() >= users[1].getFollowers(), "Users are not sorted correctly -followers")
+    users = city.getSortedUsers("join")
+    ok_(users[0].getJoin() >= users[1].getJoin(), "Users are not sorted correctly -join")
+    users = city.getSortedUsers("organizations")
+    ok_(users[0].getOrganizations() >= users[1].getOrganizations(), "Users are not sorted correctly -organizations")
+    users = city.getSortedUsers("repositories")
+    ok_(users[0].getNumberOfRepositories() >= users[1].getNumberOfRepositories(), "Users are not sorted correctly -repositories")
+    users = city.getSortedUsers("stars")
+    ok_(users[0].getStars() >= users[1].getStars(), "Users are not sorted correctly -stars")
+    users = city.getSortedUsers("contributions")
+    ok_(users[0].getContributions() >= users[1].getContributions(), "Users are not sorted correctly -contributions")
+
+
+def test_export():
+    """Exporting users"""
+    global city
+    city.export("testTemplate", "out", "contributions")
+
+
+def test_getConfig():
+    city = GitHubCity(idGH, secretGH)
+    city.readConfigFromJSON("testConfig.json")
+    city.configToJson("asd.json")
+    city2 = GitHubCity(idGH, secretGH)
+    city2.readConfigFromJSON("asd.json")
+    eq_(city._city,city2._city, "Configuration was not saved correctly")
 
 
 def test_checkWhenApiLimit():
     """Checking when the API limit is reached
     """
-    global url, cityA
+    global url, city
     i = 0
     while i<50:
-        result = cityA._readAPI(url)
+        result = city._readAPI(url)
         i+=1
 
     ok_(result!=None, "Problem checking when API limit is reached")

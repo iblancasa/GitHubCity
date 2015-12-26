@@ -1,0 +1,21 @@
+{
+  "description": "Configuration of a city",
+  "type": "object",
+  "properties": {
+    "excludedLocations": {
+      "type": "array"
+    },
+    "excludedUsers": {
+      "type": "array"
+    },
+    "locations": {
+      "type": "array"
+    },
+    "name": {
+      "type": "string"
+    },
+    "intervals": {
+      "type": "array"
+    }
+  }
+}
