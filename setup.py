@@ -36,7 +36,7 @@ setup(
   author = 'Israel Blancas @iblancasa',
   author_email = 'iblancasa@gmail.com',
   url='https://github.com/iblancasa/GitHubCity',
-  download_url = 'https://github.com/iblancasa/GitHubCity/0.01',
-  keywords = ['github', 'ranking', 'data', 'api'], # arbitrary keywords
+  download_url = 'https://github.com/iblancasa/GitHubCity/tarball/0.01',
+  keywords = ['github', 'ranking', 'data', 'api'],
   classifiers = [],
 )
