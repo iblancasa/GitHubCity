@@ -69,6 +69,10 @@ def testGettingData():
     ok_(user._numRepos!=None,"numRepos is not correctly")
     ok_(user._stars!=None,"Stars is not correctly")
 
+    user2 = GitHubUser("ManuelPeinado")
+    user2.getData()
+    ok_(user2._followers!=None,"Followers is not correctly when an user has Xk followers")
+
 def testGetters():
     """Testing getters"""
     global user
@@ -91,15 +95,20 @@ def testNoUser():
     falseUser = GitHubUser("shurmanicop")
     assert_raises(Exception,falseUser.getData())
 
-'''
+def testExport():
+    """Testing export users"""
+    global user
+    data = user.export()
+    ok_("name" in data, "Export is correct")
+
+
 #This test is deactivated to improve perfomance. Run only local
 def testLotOfRequest():
     """Test if request are completed when server says: 'no more' """
     global user
     i = 0
-    while i<40:
+    while i<20:
         user._contributions = 0
         user.getData()
         i+=1
     ok_(user._contributions!=0, "Lot of request fail")
-'''
