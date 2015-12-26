@@ -57,16 +57,23 @@ class GitHubCity:
     Attributes:
         _city (str): Name of the city (private).
         _myusers (set): Name of all users in a city (private).
-        _githubID (str): ID of your GitHub application.
-        _githubSecret (str): secretGH of your GitHub application.
-        _dataUsers (List[GitHubUser]): the list of GitHub users.
-        _excluded (set): list of names of excluded users.
-        _lastDay (str): day of last interval
-        _names (Queue): Queue with all users that we still have to process.
-        _threads (set): Set of active Threads.
-        _logger (logger): Logger.
-        _l (Lock): lock to solve problems with threads.
+        _githubID (str): ID of your GitHub application (private).
+        _githubSecret (str): secretGH of your GitHub application (private).
+        _dataUsers (List[GitHubUser]): the list of GitHub users (private).
+        _excluded (set): set of names of excluded users (private).
+        _excludedLocations (set): set of excluded locations (private).
+        _lastDay (str): day of last interval (private).
+        _names (Queue): Queue with all users that we still have to process (private).
+        _threads (set): Set of active Threads (private).
+        _logger (logger): Logger (private).
+        _lockGetUser (Lock): lock to solve problems with threads in get user (private).
+        _lockReadAddUser (Lock): lock to solve problems with threads in check if an user is repeated(private).
+        _fin (bool): check if there are more users to process (private).
+        _locations (list): list of locations where search users (private).
+        __urlLocations (str): string with the locations formatted to GitHub API URL (private).
+
     """
+
 
     def __init__(self, githubID, githubSecret, config=None, city=None, locations=None,
                 excludedUsers=None, excludedLocations=None, debug=False):
@@ -77,11 +84,14 @@ class GitHubCity:
             https://github.com/settings/applications/new .
 
         Args:
-            city (str): Name of the city you want to search about.
             githubID (str): ID of your GitHub application.
             githubSecret (str): Secret of your GitHub application.
-            excludedUsers (dir): Excluded users of the ranking (see schemaExcluded.json)
-            debug (bool): Show a log in your terminal. Default: False
+            city (str): Name of the city you want to search about (optional).
+            config (dict): set with configuration (see cityconfigschema.json)
+            locations (list): locations where search users (optional).
+            excludedUsers (dir): excluded users of the ranking (optional).
+            excludedLocations (list): excluded locations (optional).
+            debug (bool): show a log in your terminal (optional).
 
         Returns:
             a new instance of GithubCity class
@@ -138,16 +148,31 @@ class GitHubCity:
 
 
     def __str__(self):
+        """str the class"""
         return str(self.getConfig())
 
     def _addLocationsToURL(self, locations):
+        """Format all locations to GitHub's URL API
+
+        Note:
+            This method is private.
+
+        Args:
+            locations (list): list of str where each str is a location where search
+        """
         self._urlLocations = ""
 
         for l in self._locations:
             self._urlLocations += "+location:" + str(urllib.parse.quote(l))
 
 
+
     def readConfig(self, config):
+        """Read config from a dict
+
+        Args:
+            config: config to read (see cityconfigschema.json)
+        """
         self._city = config["name"]
         self._intervals = config["intervals"]
         self._lastDay = config["last_date"]
@@ -173,6 +198,11 @@ class GitHubCity:
 
 
     def readConfigFromJSON(self, fileName):
+        """Read configuration from a file
+
+        Args:
+            fileName (str): name of a config file (see cityconfigschema.json)
+        """
         with open(fileName) as data_file:
             data = json.load(data_file)
         self.readConfig(data)
@@ -254,8 +284,8 @@ class GitHubCity:
 
         Args:
             page (int): number of the page.
-            start_date (datetime.date): start date of the range to search users.
-            final_date (datetime.date): final date of the range to search users.
+            start_date (str): start date of the range to search users (Y-m-d).
+            final_date (str): final date of the range to search users (Y-m-d).
             order (str): order of the query. Valid values are 'asc' or 'desc'. Default: asc
 
         Returns:
@@ -464,6 +494,11 @@ class GitHubCity:
 
 
     def getConfig(self):
+        """Returns the configuration of the city
+
+        Returns:
+            configuration of the city (dict)
+        """
         config = {}
         config["name"] = self._city
         config["intervals"] = self._intervals
@@ -482,12 +517,24 @@ class GitHubCity:
 
 
     def configToJson(self, fileName):
+        """Saves the configuration of the city in a json
+
+        Args:
+            fileName (str): where save the configuration
+        """
         config = self.getConfig()
         with open(fileName, "w") as outfile:
             json.dump(config, outfile, indent=4, sort_keys=True)
 
 
     def export(self, template_file_name, output_file_name, sort):
+        """Export ranking to a file
+
+        Args:
+            template_file_name (str): where is the template (moustache template)
+            output_file_name (str): where create the file with the ranking
+            sort (str): field to sort the users
+        """
         exportedData = {}
         dataUsers = self.getSortedUsers(sort)
         exportedUsers = []
