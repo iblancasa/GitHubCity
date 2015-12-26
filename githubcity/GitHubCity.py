@@ -486,7 +486,7 @@ class GitHubCity:
             self._dataUsers.sort(key=lambda u: u.getJoin(), reverse=True)
         elif order == "organizations":
             self._dataUsers.sort(key=lambda u: u.getOrganizations(), reverse=True)
-        elif order == "respositories":
+        elif order == "repositories":
             self._dataUsers.sort(key=lambda u: u.getNumberOfRepositories(), reverse=True)
         elif order == "stars":
             self._dataUsers.sort(key=lambda u: u.getStars(), reverse=True)

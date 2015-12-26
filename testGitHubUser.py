@@ -107,7 +107,7 @@ def testLotOfRequest():
     """Test if request are completed when server says: 'no more' """
     global user
     i = 0
-    while i<20:
+    while i<45:
         user._contributions = 0
         user.getData()
         i+=1
