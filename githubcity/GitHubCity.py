@@ -96,8 +96,22 @@ class GitHubCity:
             raise Exception("No GitHub Secret inserted")
         self._githubSecret = githubSecret
 
+        self._names = queue.Queue()
+        self._myusers = set()
+        self._dataUsers = []
+        self._threads = set()
+        self._logger = logging.getLogger("GitHubCity")
+
+        if debug:
+            coloredlogs.install(level='DEBUG')
+
+        self._fin = False
+        self._lockGetUser = Lock()
+        self._lockReadAddUser = Lock()
+
         if config:
             self.readConfig(config)
+            self._addLocationsToURL(self._locations)
         else:
             self._city = city
             self._locations  = locations
@@ -107,6 +121,8 @@ class GitHubCity:
                 self._locations = []
                 if self._city:
                     self._locations.append(self._city)
+
+            self._addLocationsToURL(self._locations)
 
             self._excluded = set()
             if excludedUsers:
@@ -118,20 +134,6 @@ class GitHubCity:
             if excludedLocations:
                 for e in excludedLocations:
                     self._excludedLocations.add(e)
-
-        self._names = queue.Queue()
-        self._myusers = set()
-        self._dataUsers = []
-        self._threads = set()
-        self._addLocationsToURL(self._locations)
-        self._logger = logging.getLogger("GitHubCity")
-
-        if debug:
-            coloredlogs.install(level='DEBUG')
-
-        self._fin = False
-        self._lockGetUser = Lock()
-        self._lockReadAddUser = Lock()
 
 
 
@@ -150,6 +152,8 @@ class GitHubCity:
         self._intervals = config["intervals"]
         self._lastDay = config["last_date"]
         self._locations = config["locations"]
+        self._excluded = set()
+        self._excludedLocations = set()
 
         excluded = config["excludedUsers"]
         for e in excluded:
@@ -415,7 +419,7 @@ class GitHubCity:
 
 
 
-    def getSortUsers(self, order):
+    def getSortedUsers(self, order="contributions"):
         """Returns a list with sorted users.
 
         Args:
@@ -456,8 +460,6 @@ class GitHubCity:
             self._dataUsers.sort(key=lambda u: u.getNumberOfRepositories(), reverse=True)
         elif order == "stars":
             self._dataUsers.sort(key=lambda u: u.getStars(), reverse=True)
-        else:
-            return None
         return self._dataUsers
 
 
@@ -487,8 +489,7 @@ class GitHubCity:
 
     def export(self, template_file_name, output_file_name, sort):
         exportedData = {}
-
-        dataUsers = self.getSortUsers(sort)
+        dataUsers = self.getSortedUsers(sort)
         exportedUsers = []
 
         for u in dataUsers:
