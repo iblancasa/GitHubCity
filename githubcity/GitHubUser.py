@@ -41,9 +41,14 @@ class GitHubUser:
         _name (str): Name of the user (private).
         _contributions (int): total contributions of a user in the last year (private).
         _followers (int): total number of followers of an user (private).
-        _gists (int): total number of gists of an user (private).
         _longestStreak (int): maximum number of consecutive days with activity (private).
         _numRepos (int): number of repositories of an user (private).
+        _stars (int): number of total stars given to the user (private).
+        _organizations (int): number of public organizations where the user is (private).
+        _join (str): when the user joined to GitHub. Format: %Y-%M-%DT%H:%i:%sZ (private).
+        _avatar (str): URL where the user's avatar is (private).
+        _language (str): language most user by the user (private).
+        _currentStreak (int): actual number of consecutive days making contributions (private).
     """
 
     def __init__(self, name):
@@ -57,6 +62,10 @@ class GitHubUser:
         self._name = name
 
     def export(self):
+        """Export all attributes of the user to a dict
+        Returns:
+            dict with all attributes of the user
+        """
         data = {}
         data["name"] = self.getName()
         data["contributions"] = self.getContributions()
@@ -69,45 +78,105 @@ class GitHubUser:
         data["organizations"] = self.getOrganizations()
         data["repositories"] = self.getNumberOfRepositories()
         data["stars"] = self.getStars()
-
         return data
 
 
-
     def getName(self):
+        """Get the name of the user
+        Returns:
+            str with the name of the user
+        """
         return self._name
 
     def getContributions(self):
+        """Get the number of public contributions of the user
+        Returns:
+            int with the number of public contributions of the user
+        """
+
         return self._contributions
 
     def getLongestStreak(self):
+        """Get the longest streak of the user
+
+        Returns:
+            int with the longest streak of the user
+        """
         return self._longestStreak
 
     def getCurrentStreak(self):
+        """Get the current streak of the user
+
+        Returns:
+            int with the current streak of the user
+        """
         return self._currentStreak
 
     def getLanguage(self):
+        """Get the most used language by the user
+
+        Returns:
+            str with the language most used
+
+        """
         return self._language
 
     def getAvatar(self):
+        """Get the URL where the avatar is
+
+        Returns:
+            str with an URL where the avatar is
+        """
         return self._avatar
 
     def getFollowers(self):
+        """Get the number of followers of this user
+
+        Returns:
+            int with the number of followers
+        """
         return self._followers
 
     def getLocation(self):
+        """Get the location of the user
+
+        Returns:
+            str with location of the user
+        """
         return self._location
 
     def getJoin(self):
+        """Get when an user joined to GitHub
+
+        Returns:
+            a str with this time format %Y-%M-%DT%H:%i:%sZ
+        """
+
         return self._join
 
     def getOrganizations(self):
+        """Get the number of public organizations where the user is
+
+        Returns:
+            int with the number of organizations
+
+        """
         return self._organizations
 
     def getNumberOfRepositories(self):
+        """Get the number of repositories of this user
+
+        Returns:
+            int with the number of repositories
+        """
         return self._numRepos
 
     def getStars(self):
+        """Get number of stars given from GitHub users to repositories created by this user
+
+        Returns:
+            int with the number of stars
+        """
         return self._stars
 
 
