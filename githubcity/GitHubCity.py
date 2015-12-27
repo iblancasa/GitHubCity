@@ -228,8 +228,6 @@ class GitHubCity:
             userLoc = myNewUser.getLocation()
             if not any(s in userLoc for s in self._excludedLocations):
                 self._dataUsers.append(myNewUser)
-                self._logger.debug("NEW USER "+new_user+" "+str(len(self._dataUsers)+1)+" "+\
-                threading.current_thread().name)
         else:
             self._lockReadAddUser.release()
 
@@ -258,7 +256,6 @@ class GitHubCity:
                }
         while code != 200:
             req = urllib.request.Request(url, headers=hdr)
-            self._logger.debug("Getting data from "+url)
             try:
                 response = urllib.request.urlopen(req)
                 code = response.code
