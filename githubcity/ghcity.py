@@ -47,7 +47,7 @@ import sys
 import logging
 import coloredlogs
 sys.path.append(os.getcwd())
-from GitHubUser import *
+from . import ghuser
 
 
 
