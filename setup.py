@@ -31,7 +31,7 @@ from distutils.core import setup
 setup(
   name = 'githubcity',
   packages = ['githubcity'],
-  version = '0.01',
+  version = '0.1.3',
   description = 'GitHub city ranking creator',
   author = 'Israel Blancas @iblancasa',
   author_email = 'iblancasa@gmail.com',
