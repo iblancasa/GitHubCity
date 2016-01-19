@@ -37,7 +37,7 @@ import os
 import datetime
 import json
 sys.path.append(os.getcwd()+"/githubcity")
-from GitHubCity import *
+from ghcity import *
 
 ###########################################################
 # Gobal variables

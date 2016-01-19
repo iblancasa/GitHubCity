@@ -46,8 +46,8 @@ from multiprocessing import Lock
 import sys
 import logging
 import coloredlogs
-sys.path.append(os.getcwd())
-from GitHubUser import *
+import ghuser
+GitHubUser = ghuser.GitHubUser
 
 
 
@@ -524,13 +524,14 @@ class GitHubCity:
             json.dump(config, outfile, indent=4, sort_keys=True)
 
 
-    def export(self, template_file_name, output_file_name, sort):
+    def export(self, template_file_name, output_file_name, sort, extra=None):
         """Export ranking to a file
 
         Args:
             template_file_name (str): where is the template (moustache template)
             output_file_name (str): where create the file with the ranking
             sort (str): field to sort the users
+            extra (dict): extra params to add in the template (optional)
         """
         exportedData = {}
         dataUsers = self.getSortedUsers(sort)
@@ -540,6 +541,7 @@ class GitHubCity:
             exportedUsers.append(u.export())
 
         exportedData["users"] = exportedUsers
+        exportedData["extra"] = extra
 
         with open(template_file_name) as template_file:
             template_raw = template_file.read()

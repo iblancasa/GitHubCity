@@ -36,7 +36,7 @@ import sys
 import os
 import json
 sys.path.append(os.getcwd()+"/githubcity")
-from GitHubUser import GitHubUser
+from ghuser import *
 import datetime
 
 ###########################################################
@@ -104,7 +104,7 @@ def testExport():
 
 #This test is deactivated to improve perfomance. Run only local
 def testLotOfRequest():
-    """Test if request are completed when server says: 'no more' """
+    """Test if requests are completed when server says: 'no more' """
     global user
     i = 0
     while i<45:

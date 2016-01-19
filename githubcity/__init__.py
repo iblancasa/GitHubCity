@@ -1,2 +1,4 @@
-from GitHubCity import GitHubCity
-from GitHubUser import GitHubUser
+from . import ghcity
+from . import ghuser
+GitHubCity = ghcity.GitHubCity
+GiHubUser = ghuser.GitHubUser
