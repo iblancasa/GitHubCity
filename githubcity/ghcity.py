@@ -46,10 +46,9 @@ from multiprocessing import Lock
 import sys
 import logging
 import coloredlogs
-import ghuser
+sys.path.append(os.getcwd())
+from githubcity import ghuser
 GitHubUser = ghuser.GitHubUser
-
-
 
 class GitHubCity:
     """Manager of a GithubCity.
@@ -163,8 +162,7 @@ class GitHubCity:
         self._urlLocations = ""
 
         for l in self._locations:
-            self._urlLocations += "+location:" + str(urllib.parse.quote(l))
-
+            self._urlLocations += "+location:\"" + str(urllib.parse.quote(l))+"\""
 
 
     def readConfig(self, config):
@@ -299,7 +297,6 @@ class GitHubCity:
                 "+created:" + start_date +\
                 ".." + final_date +\
                 "&sort=joined&order="+order+"&per_page=100&page=" + str(page)
-
         return url
 
 
@@ -311,7 +308,7 @@ class GitHubCity:
                 This method is private.
 
         """
-        while(self._names.empty()):
+        while(self._names.empty() and not self._fin):
             pass
 
         while not self._fin or not self._names.empty():
@@ -368,6 +365,7 @@ class GitHubCity:
         while total_pages>=page:
             url = self._getURL(page, start_date, final_date)
             data = self._readAPI(url)
+            
             for u in data['items']:
                 self._names.put(u["login"])
             total_count = data["total_count"]
@@ -524,24 +522,32 @@ class GitHubCity:
             json.dump(config, outfile, indent=4, sort_keys=True)
 
 
-    def export(self, template_file_name, output_file_name, sort, extra=None):
+    def export(self, template_file_name, output_file_name, sort):
         """Export ranking to a file
 
         Args:
             template_file_name (str): where is the template (moustache template)
             output_file_name (str): where create the file with the ranking
             sort (str): field to sort the users
-            extra (dict): extra params to add in the template (optional)
         """
         exportedData = {}
         dataUsers = self.getSortedUsers(sort)
         exportedUsers = []
 
+        position = 1
+
         for u in dataUsers:
-            exportedUsers.append(u.export())
+            userExported = u.export()
+            userExported["position"] = position
+            exportedUsers.append(userExported)
+
+            if position  < len(dataUsers):
+                userExported["comma"] = True
+
+            position+=1
+
 
         exportedData["users"] = exportedUsers
-        exportedData["extra"] = extra
 
         with open(template_file_name) as template_file:
             template_raw = template_file.read()
