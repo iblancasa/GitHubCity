@@ -162,8 +162,7 @@ class GitHubCity:
         self._urlLocations = ""
 
         for l in self._locations:
-            self._urlLocations += "+location:" + str(urllib.parse.quote(l))
-
+            self._urlLocations += "+location:\"" + str(urllib.parse.quote(l))+"\""
 
 
     def readConfig(self, config):
@@ -298,7 +297,6 @@ class GitHubCity:
                 "+created:" + start_date +\
                 ".." + final_date +\
                 "&sort=joined&order="+order+"&per_page=100&page=" + str(page)
-
         return url
 
 
@@ -310,7 +308,7 @@ class GitHubCity:
                 This method is private.
 
         """
-        while(self._names.empty()):
+        while(self._names.empty() and not self._fin):
             pass
 
         while not self._fin or not self._names.empty():
@@ -367,6 +365,7 @@ class GitHubCity:
         while total_pages>=page:
             url = self._getURL(page, start_date, final_date)
             data = self._readAPI(url)
+            
             for u in data['items']:
                 self._names.put(u["login"])
             total_count = data["total_count"]
