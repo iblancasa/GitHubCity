@@ -47,7 +47,7 @@ import sys
 import logging
 import coloredlogs
 sys.path.append(os.getcwd())
-from . import ghuser
+from githubcity import ghuser
 GitHubUser = ghuser.GitHubUser
 
 class GitHubCity:
