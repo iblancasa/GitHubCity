@@ -51,15 +51,17 @@ class GitHubUser:
         _currentStreak (int): actual number of consecutive days making contributions (private).
     """
 
-    def __init__(self, name):
+    def __init__(self, name, server="https://github.com/"):
         """Constructor of the class.
         Args:
             name (str): name (login) of an user in GitHub
+            server (str): server to query data. Default: https://github.com/
 
         Returns:
             a new instance of GitHubUser class
         """
         self._name = name
+        self._server = server
 
     def export(self):
         """Export all attributes of the user to a dict
@@ -184,8 +186,7 @@ class GitHubUser:
         """Get data of a GitHub user.
         """
 
-        url = "https://github.com/"+self._name
-
+        url = self._server + self._name
         data = self._getDataFromURL(url)
         web = BeautifulSoup(data,"lxml")
 
