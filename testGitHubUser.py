@@ -50,7 +50,7 @@ def setup():
 def test_classCreation():
     """Class is created correctly"""
     global user
-    user = GitHubUser("iblancasa")
+    user = GitHubUser("iblancasa", "http://localhost:3000/")
     eq_(user._name,"iblancasa", "Class was not created correctly")
 
 def testGettingData():
@@ -69,7 +69,7 @@ def testGettingData():
     ok_(user._numRepos!=None,"numRepos is not correctly")
     ok_(user._stars!=None,"Stars is not correctly")
 
-    user2 = GitHubUser("ManuelPeinado")
+    user2 = GitHubUser("iblancasakfollowers", "http://localhost:3000/")
     user2.getData()
     ok_(user2._followers!=None,"Followers is not correctly when an user has Xk followers")
 
@@ -92,7 +92,7 @@ def testGetters():
 @raises(Exception)
 def testNoUser():
     """Test when a false user is inserted"""
-    falseUser = GitHubUser("shurmanicop")
+    falseUser = GitHubUser("erroruser","http://localhost:3000/")
     assert_raises(Exception,falseUser.getData())
 
 def testExport():
@@ -105,9 +105,10 @@ def testExport():
 #This test is deactivated to improve perfomance. Run only local
 def testLotOfRequest():
     """Test if requests are completed when server says: 'no more' """
-    global user
+
+    user = GitHubUser("nomoreuser", "http://localhost:3000/")
     i = 0
-    while i<45:
+    while i<2:
         user._contributions = 0
         user.getData()
         i+=1
