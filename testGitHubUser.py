@@ -102,7 +102,7 @@ def testExport():
     ok_("name" in data, "Export is correct")
 
 
-#This test is deactivated to improve perfomance. Run only local
+
 def testLotOfRequest():
     """Test if requests are completed when server says: 'no more' """
 
