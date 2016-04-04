@@ -75,7 +75,7 @@ class GitHubCity:
 
 
     def __init__(self, githubID, githubSecret, config=None, city=None, locations=None,
-                excludedUsers=None, excludedLocations=None, server="https://api.github.com/" debug=False):
+                excludedUsers=None, excludedLocations=None, server="https://api.github.com/", debug=False):
         """Constructor of the class.
 
         Note:
@@ -118,7 +118,8 @@ class GitHubCity:
         self._fin = False
         self._lockGetUser = Lock()
         self._lockReadAddUser = Lock()
-
+        self._server = server
+        
         if config:
             self.readConfig(config)
             self._addLocationsToURL(self._locations)
@@ -145,7 +146,7 @@ class GitHubCity:
                 for e in excludedLocations:
                     self._excludedLocations.add(e)
 
-            self._server = server
+
 
 
 
