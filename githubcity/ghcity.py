@@ -75,7 +75,7 @@ class GitHubCity:
 
 
     def __init__(self, githubID, githubSecret, config=None, city=None, locations=None,
-                excludedUsers=None, excludedLocations=None, debug=False):
+                excludedUsers=None, excludedLocations=None, server="https://api.github.com/" debug=False):
         """Constructor of the class.
 
         Note:
@@ -90,6 +90,7 @@ class GitHubCity:
             locations (list): locations where search users (optional).
             excludedUsers (dir): excluded users of the ranking (optional).
             excludedLocations (list): excluded locations (optional).
+            server (str): server to query (optional).
             debug (bool): show a log in your terminal (optional).
 
         Returns:
@@ -143,6 +144,8 @@ class GitHubCity:
             if excludedLocations:
                 for e in excludedLocations:
                     self._excludedLocations.add(e)
+
+            self._server = server
 
 
 
@@ -288,11 +291,11 @@ class GitHubCity:
 
         """
         if not start_date or not final_date:
-            url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
+            url = self._server +"search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
                 "&order=desc&q=sort:joined+type:user" + self._urlLocations + \
                 "&sort=joined&order=asc&per_page=100&page=" + str(page)
         else:
-            url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
+            url = self._server +"search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
                 "&order=desc&q=sort:joined+type:user" + self._urlLocations + \
                 "+created:" + start_date +\
                 ".." + final_date +\
@@ -365,7 +368,7 @@ class GitHubCity:
         while total_pages>=page:
             url = self._getURL(page, start_date, final_date)
             data = self._readAPI(url)
-            
+
             for u in data['items']:
                 self._names.put(u["login"])
             total_count = data["total_count"]
