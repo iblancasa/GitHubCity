@@ -148,7 +148,7 @@ class GitHubCity:
             self._userServer = userServer
         if debug:
             coloredlogs.install(level='DEBUG')
-            self._fakeUser = GitHubUser("iblancasa", server = self._userServer)
+
 
 
 
@@ -230,15 +230,12 @@ class GitHubCity:
             self._lockReadAddUser.release()
             self._myusers.add(new_user)
 
-            if not self._debug:
-                myNewUser = GitHubUser(new_user, server = self._userServer)
-                myNewUser.getData()
-                userLoc = myNewUser.getLocation()
-                if not any(s in userLoc for s in self._excludedLocations):
-                    self._dataUsers.append(myNewUser)
-            else:
-                myNewUser = self._fakeUser
+            myNewUser = GitHubUser(new_user, server = self._userServer)
+            myNewUser.getData(debug=self._debug)
 
+            userLoc = myNewUser.getLocation()
+            if not any(s in userLoc for s in self._excludedLocations):
+                self._dataUsers.append(myNewUser)
 
         else:
             self._lockReadAddUser.release()
@@ -261,7 +258,7 @@ class GitHubCity:
                 * incomplete_results (bool): https://developer.github.com/v3/search/#timeouts-and-incomplete-results
                 * items (List[dict]): a list with the users that match with the search
         """
-        print(url)
+
         code = 0
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
                'Accept': 'application/vnd.github.v3.text-match+json'

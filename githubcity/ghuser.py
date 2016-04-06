@@ -182,60 +182,73 @@ class GitHubUser:
         return self._stars
 
 
-    def getData(self):
+    def getData(self, debug = False):
         """Get data of a GitHub user.
         """
+        if not debug:
+            url = self._server + self._name
+            data = self._getDataFromURL(url)
+            web = BeautifulSoup(data,"lxml")
 
-        url = self._server + self._name
-        data = self._getDataFromURL(url)
-        web = BeautifulSoup(data,"lxml")
+            #Contributions, longest streak and current streak
+            contributions_raw = web.find_all('span',{'class':'contrib-number'})
+            self._contributions = int(contributions_raw[0].text.split(" ")[0].replace(",",""))
+            self._longestStreak = int(contributions_raw[1].text.split(" ")[0].replace(",",""))
+            self._currentStreak = int(contributions_raw[2].text.split(" ")[0].replace(",",""))
 
-        #Contributions, longest streak and current streak
-        contributions_raw = web.find_all('span',{'class':'contrib-number'})
-        self._contributions = int(contributions_raw[0].text.split(" ")[0].replace(",",""))
-        self._longestStreak = int(contributions_raw[1].text.split(" ")[0].replace(",",""))
-        self._currentStreak = int(contributions_raw[2].text.split(" ")[0].replace(",",""))
+            #Language
+            self._language = web.find("meta", {"name":"description"})['content'].split(" ")[6]
+            if self._language[len(self._language)-1]==",":
+                self._language = self._language[:-1]
 
-        #Language
-        self._language = web.find("meta", {"name":"description"})['content'].split(" ")[6]
-        if self._language[len(self._language)-1]==",":
-            self._language = self._language[:-1]
+            #Avatar
+            self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
 
-        #Avatar
-        self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
+            #Followers
+            vcard = web.find_all("strong", {"class":"vcard-stat-count"})
+            if "k" in vcard[0].text:
+                self._followers = int(float(vcard[0].text[:-1].replace('\.',','))*1000)
+            else:
+                self._followers = int(vcard[0].text)
 
-        #Followers
-        vcard = web.find_all("strong", {"class":"vcard-stat-count"})
-        if "k" in vcard[0].text:
-            self._followers = int(float(vcard[0].text[:-1].replace('\.',','))*1000)
+            #Location
+            self._location = web.find("li", {"itemprop":"homeLocation"}).text
+
+            #Date of creation
+            self._join = dateutil.parser.parse(web.find("time",{"class":"join-date"})["datetime"])
+
+            #Number of organizations
+            self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
+
+            #Number of repos
+            url +="?tab=repositories"
+            data = self._getDataFromURL(url)
+            web = BeautifulSoup(data,"lxml")
+
+            repos = web.find_all("a",{"aria-label":"Stargazers"})
+            self._numRepos = (len(repos))
+
+            #Number of total stars
+            stars = 0
+            non_decimal = re.compile(r'[^\d]+')
+
+            for repo in repos:
+                stars += int(non_decimal.sub('', repo.text))
+
+            self._stars = stars
         else:
-            self._followers = int(vcard[0].text)
+            self._contributions = 1000
+            self._longestStreak = 2
+            self._currentStreak = 2
+            self._language="Python"
+            self._avatar =""
+            self._followers = 1
+            self._join = "2013-06-24"
+            self._organizations = 1
+            self._numRepos = 1
+            self._stars = 1
+            self._location = "Barcelona"
 
-        #Location
-        self._location = web.find("li", {"itemprop":"homeLocation"}).text
-
-        #Date of creation
-        self._join = dateutil.parser.parse(web.find("time",{"class":"join-date"})["datetime"])
-
-        #Number of organizations
-        self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
-
-        #Number of repos
-        url +="?tab=repositories"
-        data = self._getDataFromURL(url)
-        web = BeautifulSoup(data,"lxml")
-
-        repos = web.find_all("a",{"aria-label":"Stargazers"})
-        self._numRepos = (len(repos))
-
-        #Number of total stars
-        stars = 0
-        non_decimal = re.compile(r'[^\d]+')
-
-        for repo in repos:
-            stars += int(non_decimal.sub('', repo.text))
-
-        self._stars = stars
 
     def _getDataFromURL(self, url):
         """Read HTML data from an user GitHub profile (private).

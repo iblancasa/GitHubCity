@@ -48,6 +48,7 @@ city = None
 url = None
 config = None
 server = "http://localhost:3000/"
+userServer = server
 
 def setup():
     global config
@@ -146,17 +147,15 @@ def test_loadConfiguration():
     city.readConfigFromJSON("testConfig.json")
     ok_(city._city=="Jaen", "Configuration was not load correctly from JSON")
 '''
-'''
+
 def test_readAPI():
     """Reading API"""
     global city, url, data
-    print(url)
     data = city._readAPI(url)
     ok_(data!=None, "Data received from API is None")
     ok_("total_count" in data, "Total_count is not correct")
     ok_("items" in data, "Items are not correct")
 
-'''
 '''
 #Tested. It is so slow
 def test_addUser():
@@ -183,24 +182,24 @@ def test_addUser():
     for i in city._dataUsers:
         ok_(i.getName() !="JJ", "User was added to the list when his location was excluded")
 '''
-'''
+
 def test_getBestIntervals():
     """Get best intervals to query"""
     global city
-    city = GitHubCity(idGH, secretGH,city="Barcelona",server=server, debug=True)
+    city = GitHubCity(idGH, secretGH,city="Barcelona",server=server, userServer=userServer, debug=True)
     city.calculateBestIntervals()
 
     for i in city._intervals:
         ok_(i[0]!="" and i[0]!=None, "First part of interval is not correct")
-'''
-'''
+
+
 def test_strCity():
     """Checking if str is correct
     """
     global city
     ok_(isinstance(str(city),str), "Str of city is not correct")
-'''
-'''
+
+
 def test_getAllUsers():
     """Get all users from a city
     """
@@ -209,12 +208,12 @@ def test_getAllUsers():
     ok_(len(city._myusers)>=len(city._dataUsers), "Get all users is not ok")
 
     smallCity = GitHubCity(idGH, secretGH, config=None,locations=["Ceuta"], city="Ceuta",
-    excludedUsers=[], excludedLocations=[], debug=True)
+    excludedUsers=[], excludedLocations=[], server = server, userServer=userServer, debug=True)
     smallCity.getCityUsers()
     ok_(len(smallCity._myusers)>=len(smallCity._dataUsers), "Get all users without calcule intervals\
         before is correct")
-'''
-'''
+
+
 def test_getTotalUsers():
     """Total users number is correct
     """
@@ -222,8 +221,9 @@ def test_getTotalUsers():
 
     users = city.getTotalUsers()
     eq_(users,len(city._dataUsers), "Get users is not correct when there are users")
-'''
-'''
+
+
+
 def test_getSortUsers():
     """Getting sort users
     """
@@ -248,13 +248,13 @@ def test_getSortUsers():
     ok_(users[0].getStars() >= users[1].getStars(), "Users are not sorted correctly -stars")
     users = city.getSortedUsers("contributions")
     ok_(users[0].getContributions() >= users[1].getContributions(), "Users are not sorted correctly -contributions")
-'''
-'''
+
+
 def test_export():
     """Exporting users"""
     global city
     city.export("testTemplate", "out", "contributions")
-'''
+
 '''
 def test_getConfig():
     city = GitHubCity(idGH, secretGH)
