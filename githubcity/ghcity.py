@@ -115,11 +115,13 @@ class GitHubCity:
         if debug:
             coloredlogs.install(level='DEBUG')
 
+        self._debug = debug
+
         self._fin = False
         self._lockGetUser = Lock()
         self._lockReadAddUser = Lock()
         self._server = server
-        
+
         if config:
             self.readConfig(config)
             self._addLocationsToURL(self._locations)
@@ -192,7 +194,10 @@ class GitHubCity:
 
         self._addLocationsToURL(self._locations)
         last = datetime.datetime.strptime(self._lastDay, "%Y-%m-%d")
-        today = datetime.datetime.now().date()
+        if self._debug:
+            today = datetime.date(2016, 3, 20)
+        else:
+            today = datetime.datetime.now().date()
 
         self._validInterval(last, today)
 
@@ -251,7 +256,7 @@ class GitHubCity:
                 * incomplete_results (bool): https://developer.github.com/v3/search/#timeouts-and-incomplete-results
                 * items (List[dict]): a list with the users that match with the search
         """
-
+        print(url)
         code = 0
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
                'Accept': 'application/vnd.github.v3.text-match+json'
@@ -434,9 +439,15 @@ class GitHubCity:
         """
         comprobation = self._readAPI(self._getURL())
         self._bigCity = True
-        self._validInterval(datetime.date(2008, 1, 1), datetime.datetime.now().date())
+
+        if self._debug:
+            today = datetime.date(2016, 3, 20)
+        else:
+            today = datetime.datetime.now().date()
+
+        self._validInterval(datetime.date(2008, 1, 1), today)
         self._logger.info("Total number of intervals: "+ str(len(self._intervals)))
-        self._lastDay = datetime.datetime.now().date().strftime("%Y-%m-%d")
+        self._lastDay = today.strftime("%Y-%m-%d")
 
 
     def getTotalUsers(self):
