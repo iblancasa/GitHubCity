@@ -75,7 +75,7 @@ class GitHubCity:
 
 
     def __init__(self, githubID, githubSecret, config=None, city=None, locations=None,
-                excludedUsers=None, excludedLocations=None, server="https://api.github.com/", debug=False):
+                excludedUsers=None, excludedLocations=None, server="https://api.github.com/", userServer="https://github.com/", debug=False):
         """Constructor of the class.
 
         Note:
@@ -148,6 +148,7 @@ class GitHubCity:
                 for e in excludedLocations:
                     self._excludedLocations.add(e)
 
+            self._userServer = userServer
 
 
 
@@ -229,7 +230,8 @@ class GitHubCity:
         if not new_user in self._myusers and not new_user in self._excluded:
             self._lockReadAddUser.release()
             self._myusers.add(new_user)
-            myNewUser = GitHubUser(new_user)
+
+            myNewUser = GitHubUser(new_user, server = self._userServer)
             myNewUser.getData()
 
             userLoc = myNewUser.getLocation()
@@ -272,7 +274,7 @@ class GitHubCity:
                     now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
                     self._logger.warning("Limit of API. Wait: "+str(reset - now_sec)+" secs")
                     time.sleep(reset - now_sec)
-                code = e.code
+                code = 0
 
         data = json.loads(response.read().decode('utf-8'))
         response.close()
