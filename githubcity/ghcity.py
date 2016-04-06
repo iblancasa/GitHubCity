@@ -112,9 +112,6 @@ class GitHubCity:
         self._threads = set()
         self._logger = logging.getLogger("GitHubCity")
 
-        if debug:
-            coloredlogs.install(level='DEBUG')
-
         self._debug = debug
 
         self._fin = False
@@ -149,7 +146,9 @@ class GitHubCity:
                     self._excludedLocations.add(e)
 
             self._userServer = userServer
-
+        if debug:
+            coloredlogs.install(level='DEBUG')
+            self._fakeUser = GitHubUser("iblancasa", server = self._userServer)
 
 
 
@@ -231,12 +230,16 @@ class GitHubCity:
             self._lockReadAddUser.release()
             self._myusers.add(new_user)
 
-            myNewUser = GitHubUser(new_user, server = self._userServer)
-            myNewUser.getData()
+            if not self._debug:
+                myNewUser = GitHubUser(new_user, server = self._userServer)
+                myNewUser.getData()
+                userLoc = myNewUser.getLocation()
+                if not any(s in userLoc for s in self._excludedLocations):
+                    self._dataUsers.append(myNewUser)
+            else:
+                myNewUser = self._fakeUser
 
-            userLoc = myNewUser.getLocation()
-            if not any(s in userLoc for s in self._excludedLocations):
-                self._dataUsers.append(myNewUser)
+
         else:
             self._lockReadAddUser.release()
 
