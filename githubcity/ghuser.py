@@ -41,14 +41,13 @@ class GitHubUser:
         _name (str): Name of the user (private).
         _contributions (int): total contributions of a user in the last year (private).
         _followers (int): total number of followers of an user (private).
-        _longestStreak (int): maximum number of consecutive days with activity (private).
         _numRepos (int): number of repositories of an user (private).
         _stars (int): number of total stars given to the user (private).
         _organizations (int): number of public organizations where the user is (private).
         _join (str): when the user joined to GitHub. Format: %Y-%M-%DT%H:%i:%sZ (private).
         _avatar (str): URL where the user's avatar is (private).
         _language (str): language most user by the user (private).
-        _currentStreak (int): actual number of consecutive days making contributions (private).
+        _bio (str): bio of the user (private).
     """
 
     def __init__(self, name, server="https://github.com/"):
@@ -71,8 +70,6 @@ class GitHubUser:
         data = {}
         data["name"] = self.getName()
         data["contributions"] = self.getContributions()
-        data["longestStreak"] = self.getLongestStreak()
-        data["currentStreak"] = self.getCurrentStreak()
         data["language"] = self.getLanguage()
         data["avatar"] = self.getAvatar()
         data["followers"] = self.getFollowers()
@@ -80,6 +77,7 @@ class GitHubUser:
         data["organizations"] = self.getOrganizations()
         data["repositories"] = self.getNumberOfRepositories()
         data["stars"] = self.getStars()
+        data["bio"] = self.getBio()
         return data
 
 
@@ -97,22 +95,6 @@ class GitHubUser:
         """
 
         return self._contributions
-
-    def getLongestStreak(self):
-        """Get the longest streak of the user
-
-        Returns:
-            int with the longest streak of the user
-        """
-        return self._longestStreak
-
-    def getCurrentStreak(self):
-        """Get the current streak of the user
-
-        Returns:
-            int with the current streak of the user
-        """
-        return self._currentStreak
 
     def getLanguage(self):
         """Get the most used language by the user
@@ -153,7 +135,6 @@ class GitHubUser:
         Returns:
             a str with this time format %Y-%M-%DT%H:%i:%sZ
         """
-
         return self._join
 
     def getOrganizations(self):
@@ -181,6 +162,13 @@ class GitHubUser:
         """
         return self._stars
 
+    def getBio(self):
+        """Get the bio of the user
+
+        Returns:
+            str with the bio
+        """
+        return self._bio 
 
     def getData(self, debug = False):
         """Get data of a GitHub user.
@@ -190,13 +178,11 @@ class GitHubUser:
             data = self._getDataFromURL(url)
             web = BeautifulSoup(data,"lxml")
 
-            #Contributions, longest streak and current streak
-            contributions_raw = web.find_all('span',{'class':'contrib-number'})
-            self._contributions = int(contributions_raw[0].text.split(" ")[0].replace(",",""))
-            self._longestStreak = int(contributions_raw[1].text.split(" ")[0].replace(",",""))
-            self._currentStreak = int(contributions_raw[2].text.split(" ")[0].replace(",",""))
+            contributions_raw = web.find_all('div',{'class':'boxed-group flush'})
+            self._contributions = int(contributions_raw[2].text.split(" ")[6].replace(",",""))
 
             #Language
+
             self._language = web.find("meta", {"name":"description"})['content'].split(" ")[6]
             if self._language[len(self._language)-1]==",":
                 self._language = self._language[:-1]
@@ -215,7 +201,8 @@ class GitHubUser:
             self._location = web.find("li", {"itemprop":"homeLocation"}).text
 
             #Date of creation
-            self._join = dateutil.parser.parse(web.find("time",{"class":"join-date"})["datetime"])
+            join = dateutil.parser.parse(web.find("local-time",{"class":"join-date"})["datetime"])
+            self._join = join.strftime("%Y-%m-%d %H:%M:%S %Z")
 
             #Number of organizations
             self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
@@ -236,10 +223,11 @@ class GitHubUser:
                 stars += int(non_decimal.sub('', repo.text))
 
             self._stars = stars
+
+            bio = web.find_all("div",{"class":"user-profile-bio"})
+            self._bio = bio[0].text
         else:
             self._contributions = 1000
-            self._longestStreak = 2
-            self._currentStreak = 2
             self._language="Python"
             self._avatar =""
             self._followers = 1
@@ -248,6 +236,7 @@ class GitHubUser:
             self._numRepos = 1
             self._stars = 1
             self._location = "Barcelona"
+            self._bio ="Bio"
 
 
     def _getDataFromURL(self, url):
