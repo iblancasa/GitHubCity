@@ -231,7 +231,8 @@ class GitHubCity:
             self._myusers.add(new_user)
 
             myNewUser = GitHubUser(new_user, server = self._userServer)
-            myNewUser.getData(debug=self._debug)
+            myNewUser.getData(debug=False)
+            myNewUser.getRealContributions()
 
             userLoc = myNewUser.getLocation()
             if not any(s in userLoc for s in self._excludedLocations):
@@ -461,15 +462,15 @@ class GitHubCity:
 
 
 
-    def getSortedUsers(self, order="contributions"):
+    def getSortedUsers(self, order="public"):
         """Returns a list with sorted users.
 
         Args:
             order (str): a str with one of these values (field to sort by).
-                - contributions
+                - contributions (total number of contributions)
+                - public (public contributions)
+                - private (private contributions)
                 - name
-                - lstreak
-                - cstreak
                 - language
                 - followers
                 - join:
@@ -484,12 +485,12 @@ class GitHubCity:
         """
         if order == "contributions":
             self._dataUsers.sort(key=lambda u: u.getContributions(), reverse=True)
+        elif order == "public":
+            self._dataUsers.sort(key=lambda u: u.getPublicContributions(), reverse=True)
+        elif order == "private":
+            self._dataUsers.sort(key=lambda u: u.getPrivateContributions(), reverse=True)
         elif order == "name":
             self._dataUsers.sort(key=lambda u: u.getName(), reverse=True)
-        elif order == "lstreak":
-            self._dataUsers.sort(key=lambda u: u.getLongestStreak(), reverse=True)
-        elif order == "cstreak":
-            self._dataUsers.sort(key=lambda u: u.getCurrentStreak(), reverse=True)
         elif order == "language":
             self._dataUsers.sort(key=lambda u: u.getLanguage(), reverse=True)
         elif order == "followers":
