@@ -240,10 +240,11 @@ class GitHubUser:
             self._location = "Barcelona"
             self._bio ="Bio"
 
-    def getRealContributions(self):
-        datefrom = datetime.datetime.now() - relativedelta(years=1)
-        dateto = datefrom + relativedelta(months=1) - relativedelta(days=1)
 
+
+    def getRealContributions(self):
+        datefrom = datetime.datetime.now() - relativedelta(days=370) 
+        dateto = datefrom + relativedelta(months=1) - relativedelta(days=1)
         public = 0
         private = 0
 
@@ -255,41 +256,21 @@ class GitHubUser:
             web = BeautifulSoup(data,"lxml")
             ppcontributions = web.find_all('span',{'class':'text-emphasized'})
 
+            for contrib in ppcontributions:
+                msg = contrib.parent.text.split(" ")
+                if len(msg)>1:
+                    if contrib.parent.text.split(" ")[1] =="commits\n":#Public commits
+                        public+=int(contrib.text)
 
+                    elif len(msg)>20:
+                        if contrib.parent.text.split(" ")[20] == "contributions\n":#Private commits
+                            private += int(contrib.text.split(" ")[10])
+                    else:
+                        public+=int(contrib.text) # Issues and pull requests
 
-            print(url)
-
-            if len(ppcontributions) == 3:
-                public+=int(ppcontributions[0].text.replace(",",""))
-                private += int(ppcontributions[2].text.split(" ")[10])
-                
-                print(int(ppcontributions[0].text.replace(",","")))
-                print(int(ppcontributions[2].text.split(" ")[10]))
-
-
-            elif len(ppcontributions) == 2:
-                if ppcontributions[0].parent.text.split(" ")[1] =="commits\n":
-                    public+=int(ppcontributions[0].text)
-                    print(int(ppcontributions[0].text))
-                if ppcontributions[1].parent.text.split(" ")[20] == "contributions\n":
-                    private += int(ppcontributions[1].text.split(" ")[10])
-                    print(int(ppcontributions[1].text.split(" ")[10]))
-            elif len(ppcontributions)==1:
-                if ppcontributions[0].parent.text.split(" ")[1] =="commits\n":
-                    public+=int(ppcontributions[0].text)
-                    print(int(ppcontributions[0].text))
-                elif ppcontributions[0].parent.text.split(" ")[20] == "contributions\n":
-
-                    print(ppcontributions[0].text.split(" ")[10])
-                    private += int(ppcontributions[0].text.split(" ")[10])
-                    print(int(ppcontributions[0].text.split(" ")[10]))
 
             datefrom += relativedelta(months=1)
             dateto += relativedelta(months=1)
-
-        print(public)
-        print(private)
-        print(public+private)
        
 
 
