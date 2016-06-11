@@ -40,7 +40,9 @@ class GitHubUser:
 
     Attributes:
         _name (str): Name of the user (private).
-        _contributions (int): total contributions of a user in the last year (private).
+        _contributions (int): total contributions of an user in the last year (private).
+        _public (int): public contributions of an user in the last year (private).
+        _private (int): private contributions of an user in the last year (private).
         _followers (int): total number of followers of an user (private).
         _numRepos (int): number of repositories of an user (private).
         _stars (int): number of total stars given to the user (private).
@@ -79,6 +81,8 @@ class GitHubUser:
         data["repositories"] = self.getNumberOfRepositories()
         data["stars"] = self.getStars()
         data["bio"] = self.getBio()
+        data["private"] = self.getPrivateContributions()
+        data["public"] = self.getPublicContributions()
         return data
 
 
@@ -94,7 +98,6 @@ class GitHubUser:
         Returns:
             int with the number of public contributions of the user
         """
-
         return self._contributions
 
     def getLanguage(self):
@@ -171,6 +174,22 @@ class GitHubUser:
         """
         return self._bio 
 
+    def getPublicContributions(self):
+        """Get only the public contributions of the user
+
+        Returns:
+            int with the number of public contributions
+        """
+        return self._public
+
+    def getPrivateContributions(self):
+        """Get the number of private contributions of the user
+
+        Returns:
+            int with the number of private contributions
+        """
+        return self._private
+
     def getData(self, debug = False):
         """Get data of a GitHub user.
         """
@@ -180,10 +199,14 @@ class GitHubUser:
             web = BeautifulSoup(data,"lxml")
 
             contributions_raw = web.find_all('div',{'class':'boxed-group flush'})
-            self._contributions = int(contributions_raw[2].text.split(" ")[6].replace(",",""))
+            if len(contributions_raw)==3: #Contributions to another repos
+                self._contributions = int(contributions_raw[2].text.split(" ")[6].replace(",",""))
+            elif len(contributions_raw)==2:  #No contributions to another repos
+                self._contributions = int(contributions_raw[1].text.split(" ")[6].replace(",",""))
+            else:
+                self._contributions = int(contributions_raw[0].text.split(" ")[6].replace(",",""))
 
             #Language
-
             self._language = web.find("meta", {"name":"description"})['content'].split(" ")[6]
             if self._language[len(self._language)-1]==",":
                 self._language = self._language[:-1]
@@ -226,7 +249,10 @@ class GitHubUser:
             self._stars = stars
 
             bio = web.find_all("div",{"class":"user-profile-bio"})
-            self._bio = bio[0].text
+            if len(bio)>0:
+                self._bio = bio[0].text
+            else:
+                self._bio=""
 
         else:
             self._contributions = 1000
@@ -268,9 +294,11 @@ class GitHubUser:
                     else:
                         public+=int(contrib.text) # Issues and pull requests
 
-
             datefrom += relativedelta(months=1)
             dateto += relativedelta(months=1)
+
+        self._public = public
+        self._private = private
        
 
 
