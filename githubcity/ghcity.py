@@ -42,7 +42,6 @@ import json
 from urllib.error import HTTPError
 from dateutil.relativedelta import relativedelta
 import os
-from multiprocessing import Lock
 import sys
 import logging
 import coloredlogs
@@ -75,7 +74,7 @@ class GitHubCity:
 
 
     def __init__(self, githubID, githubSecret, config=None, city=None, locations=None,
-                excludedUsers=None, excludedLocations=None, server="https://api.github.com/", userServer="https://github.com/", debug=False):
+                excludedUsers=None, excludedLocations=None, server="https://api.github.com/", userServer="https://github.com/", debug=False, log=True):
         """Constructor of the class.
 
         Note:
@@ -91,7 +90,8 @@ class GitHubCity:
             excludedUsers (dir): excluded users of the ranking (optional).
             excludedLocations (list): excluded locations (optional).
             server (str): server to query (optional).
-            debug (bool): show a log in your terminal (optional).
+            debug (bool): debug mode (optional).
+            log (bool): show log in terminal(optional).
 
         Returns:
             a new instance of GithubCity class
@@ -113,10 +113,11 @@ class GitHubCity:
         self._logger = logging.getLogger("GitHubCity")
 
         self._debug = debug
+        self._log = log
 
         self._fin = False
-        self._lockGetUser = Lock()
-        self._lockReadAddUser = Lock()
+        self._lockGetUser = threading.Lock()
+        self._lockReadAddUser = threading.Lock()
         self._server = server
 
         if config:
@@ -146,7 +147,7 @@ class GitHubCity:
                     self._excludedLocations.add(e)
 
             self._userServer = userServer
-        if debug:
+        if log:
             coloredlogs.install(level='DEBUG')
 
 
@@ -231,7 +232,7 @@ class GitHubCity:
             self._myusers.add(new_user)
 
             myNewUser = GitHubUser(new_user, server = self._userServer)
-            myNewUser.getData(debug=False)
+            myNewUser.getData(self._debug)
             myNewUser.getRealContributions()
 
             userLoc = myNewUser.getLocation()
