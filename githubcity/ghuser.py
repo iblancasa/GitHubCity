@@ -45,11 +45,9 @@ class GitHubUser:
         _private (int): private contributions of an user in the last year (private).
         _followers (int): total number of followers of an user (private).
         _numRepos (int): number of repositories of an user (private).
-        _stars (int): number of total stars given to the user (private).
         _organizations (int): number of public organizations where the user is (private).
         _join (str): when the user joined to GitHub. Format: %Y-%M-%DT%H:%i:%sZ (private).
         _avatar (str): URL where the user's avatar is (private).
-        _language (str): language most user by the user (private).
         _bio (str): bio of the user (private).
     """
 
@@ -64,6 +62,15 @@ class GitHubUser:
         """
         self._name = name
         self._server = server
+        self._followers = -1
+        self._numRepos = -1
+        self._organizations = -1
+        self._contributions = -1
+        self._join = ""
+        self._avatar = ""
+        self._bio = ""
+        self._public = -1
+        self._private = -1
 
     def export(self):
         """Export all attributes of the user to a dict
@@ -73,13 +80,11 @@ class GitHubUser:
         data = {}
         data["name"] = self.getName()
         data["contributions"] = self.getContributions()
-        data["language"] = self.getLanguage()
         data["avatar"] = self.getAvatar()
         data["followers"] = self.getFollowers()
         data["join"] = self.getJoin()
         data["organizations"] = self.getOrganizations()
         data["repositories"] = self.getNumberOfRepositories()
-        data["stars"] = self.getStars()
         data["bio"] = self.getBio()
         data["private"] = self.getPrivateContributions()
         data["public"] = self.getPublicContributions()
@@ -100,14 +105,6 @@ class GitHubUser:
         """
         return self._contributions
 
-    def getLanguage(self):
-        """Get the most used language by the user
-
-        Returns:
-            str with the language most used
-
-        """
-        return self._language
 
     def getAvatar(self):
         """Get the URL where the avatar is
@@ -158,21 +155,13 @@ class GitHubUser:
         """
         return self._numRepos
 
-    def getStars(self):
-        """Get number of stars given from GitHub users to repositories created by this user
-
-        Returns:
-            int with the number of stars
-        """
-        return self._stars
-
     def getBio(self):
         """Get the bio of the user
 
         Returns:
             str with the bio
         """
-        return self._bio 
+        return self._bio
 
     def getPublicContributions(self):
         """Get only the public contributions of the user
@@ -198,28 +187,21 @@ class GitHubUser:
             data = self._getDataFromURL(url)
             web = BeautifulSoup(data,"lxml")
 
-            contributions_raw = web.find_all('div',{'class':'boxed-group flush'})
-            if len(contributions_raw)==3: #Contributions to another repos
-                self._contributions = int(contributions_raw[2].text.split(" ")[6].replace(",",""))
-            elif len(contributions_raw)==2:  #No contributions to another repos
-                self._contributions = int(contributions_raw[1].text.split(" ")[6].replace(",",""))
-            else:
-                self._contributions = int(contributions_raw[0].text.split(" ")[6].replace(",",""))
+            contributions_raw = web.find_all('h2',{'class': 'f4 text-normal mb-3'})
 
-            #Language
-            self._language = web.find("meta", {"name":"description"})['content'].split(" ")[6]
-            if self._language[len(self._language)-1]==",":
-                self._language = self._language[:-1]
+            self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0])
 
             #Avatar
             self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
 
+
+            counters = web.find_all('span',{'class':'counter'})
+
+            #Number of repositories
+            self._numRepos = int(counters[0].text)
+
             #Followers
-            vcard = web.find_all("strong", {"class":"vcard-stat-count"})
-            if "k" in vcard[0].text:
-                self._followers = int(float(vcard[0].text[:-1].replace('\.',','))*1000)
-            else:
-                self._followers = int(vcard[0].text)
+            self._followers = int(counters[2].text)
 
             #Location
             self._location = web.find("li", {"itemprop":"homeLocation"}).text
@@ -228,50 +210,32 @@ class GitHubUser:
             join = dateutil.parser.parse(web.find("local-time",{"class":"join-date"})["datetime"])
             self._join = join.strftime("%Y-%m-%d %H:%M:%S %Z")
 
-            #Number of organizations
-            self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
-
-            #Number of repos
-            url +="?tab=repositories"
-            data = self._getDataFromURL(url)
-            web = BeautifulSoup(data,"lxml")
-
-            repos = web.find_all("a",{"aria-label":"Stargazers"})
-            self._numRepos = (len(repos))
-
-            #Number of total stars
-            stars = 0
-            non_decimal = re.compile(r'[^\d]+')
-
-            for repo in repos:
-                stars += int(non_decimal.sub('', repo.text))
-
-            self._stars = stars
-
+            #Bio
             bio = web.find_all("div",{"class":"user-profile-bio"})
             if len(bio)>0:
                 self._bio = bio[0].text
             else:
                 self._bio=""
 
+            #Number of organizations
+            self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
+
+
         else:
             self._contributions = 1000
-            self._language="Python"
             self._avatar =""
             self._followers = 1
             self._join = "2013-06-24"
             self._organizations = 1
             self._numRepos = 1
-            self._stars = 1
             self._location = "Barcelona"
             self._bio ="Bio"
 
 
 
     def getRealContributions(self):
-        datefrom = datetime.datetime.now() - relativedelta(days=370) 
+        datefrom = datetime.datetime.now() - relativedelta(days=366)
         dateto = datefrom + relativedelta(months=1) - relativedelta(days=1)
-        public = 0
         private = 0
 
         while datefrom < datetime.datetime.now():
@@ -280,26 +244,27 @@ class GitHubUser:
             url = "https://github.com/"+self._name+"?tab=overview&from="+fromstr+"&to="+tostr
             data = self._getDataFromURL(url)
             web = BeautifulSoup(data,"lxml")
-            ppcontributions = web.find_all('span',{'class':'text-emphasized'})
+
+
+            ppcontributions = web.find_all('span',{'class':'m-0 text-gray'})
+
+            print(fromstr+" "+tostr)
 
             for contrib in ppcontributions:
-                msg = contrib.parent.text.split(" ")
-                if len(msg)>1:
-                    if contrib.parent.text.split(" ")[1] =="commits\n":#Public commits
-                        public+=int(contrib.text)
+                print(contrib.text)
+                private+=int(contrib.text.lstrip().strip(" ")[0])
 
-                    elif len(msg)>20:
-                        if contrib.parent.text.split(" ")[20] == "contributions\n":#Private commits
-                            private += int(contrib.text.split(" ")[10])
-                    else:
-                        public+=int(contrib.text) # Issues and pull requests
 
             datefrom += relativedelta(months=1)
             dateto += relativedelta(months=1)
 
-        self._public = public
         self._private = private
-       
+        self._public = self._contributions - private
+
+        print("private "+ str(self._private))
+        print("public "+ str(self._public))
+
+
 
 
     def _getDataFromURL(self, url):
@@ -318,7 +283,10 @@ class GitHubUser:
         code = 0
 
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
-               'Accept': 'text/html'
+               'Accept': 'text/html',
+               'Pragma': 'no-cache',
+               'Connection': 'keep-alive',
+               'X-PJAX': 'true'
                }
 
         while code != 200:
