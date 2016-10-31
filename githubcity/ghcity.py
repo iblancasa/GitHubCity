@@ -472,12 +472,10 @@ class GitHubCity:
                 - public (public contributions)
                 - private (private contributions)
                 - name
-                - language
                 - followers
-                - join:
+                - join
                 - organizations
                 - repositories
-                - stars
 
         Returns:
             str with a list of GitHubUsers by the field indicate. If
@@ -492,8 +490,6 @@ class GitHubCity:
             self._dataUsers.sort(key=lambda u: u.getPrivateContributions(), reverse=True)
         elif order == "name":
             self._dataUsers.sort(key=lambda u: u.getName(), reverse=True)
-        elif order == "language":
-            self._dataUsers.sort(key=lambda u: u.getLanguage(), reverse=True)
         elif order == "followers":
             self._dataUsers.sort(key=lambda u: u.getFollowers(), reverse=True)
         elif order == "join":
@@ -502,8 +498,6 @@ class GitHubCity:
             self._dataUsers.sort(key=lambda u: u.getOrganizations(), reverse=True)
         elif order == "repositories":
             self._dataUsers.sort(key=lambda u: u.getNumberOfRepositories(), reverse=True)
-        elif order == "stars":
-            self._dataUsers.sort(key=lambda u: u.getStars(), reverse=True)
         return self._dataUsers
 
 

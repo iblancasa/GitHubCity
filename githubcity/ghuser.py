@@ -189,7 +189,7 @@ class GitHubUser:
 
             contributions_raw = web.find_all('h2',{'class': 'f4 text-normal mb-3'})
 
-            self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0])
+            self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0].replace(",",""))
 
             #Avatar
             self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
@@ -248,10 +248,7 @@ class GitHubUser:
 
             ppcontributions = web.find_all('span',{'class':'m-0 text-gray'})
 
-            print(fromstr+" "+tostr)
-
             for contrib in ppcontributions:
-                print(contrib.text)
                 private+=int(contrib.text.lstrip().strip(" ")[0])
 
 
@@ -260,9 +257,6 @@ class GitHubUser:
 
         self._private = private
         self._public = self._contributions - private
-
-        print("private "+ str(self._private))
-        print("public "+ str(self._public))
 
 
 
