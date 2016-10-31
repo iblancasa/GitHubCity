@@ -42,7 +42,6 @@ import json
 from urllib.error import HTTPError
 from dateutil.relativedelta import relativedelta
 import os
-from multiprocessing import Lock
 import sys
 import logging
 import coloredlogs
@@ -75,7 +74,7 @@ class GitHubCity:
 
 
     def __init__(self, githubID, githubSecret, config=None, city=None, locations=None,
-                excludedUsers=None, excludedLocations=None, debug=False):
+                excludedUsers=None, excludedLocations=None, server="https://api.github.com/", userServer="https://github.com/", debug=False, log=True):
         """Constructor of the class.
 
         Note:
@@ -90,7 +89,9 @@ class GitHubCity:
             locations (list): locations where search users (optional).
             excludedUsers (dir): excluded users of the ranking (optional).
             excludedLocations (list): excluded locations (optional).
-            debug (bool): show a log in your terminal (optional).
+            server (str): server to query (optional).
+            debug (bool): debug mode (optional).
+            log (bool): show log in terminal(optional).
 
         Returns:
             a new instance of GithubCity class
@@ -111,12 +112,13 @@ class GitHubCity:
         self._threads = set()
         self._logger = logging.getLogger("GitHubCity")
 
-        if debug:
-            coloredlogs.install(level='DEBUG')
+        self._debug = debug
+        self._log = log
 
         self._fin = False
-        self._lockGetUser = Lock()
-        self._lockReadAddUser = Lock()
+        self._lockGetUser = threading.Lock()
+        self._lockReadAddUser = threading.Lock()
+        self._server = server
 
         if config:
             self.readConfig(config)
@@ -143,6 +145,11 @@ class GitHubCity:
             if excludedLocations:
                 for e in excludedLocations:
                     self._excludedLocations.add(e)
+
+            self._userServer = userServer
+        if log:
+            coloredlogs.install(level='DEBUG')
+
 
 
 
@@ -188,7 +195,10 @@ class GitHubCity:
 
         self._addLocationsToURL(self._locations)
         last = datetime.datetime.strptime(self._lastDay, "%Y-%m-%d")
-        today = datetime.datetime.now().date()
+        if self._debug:
+            today = datetime.date(2016, 3, 20)
+        else:
+            today = datetime.datetime.now().date()
 
         self._validInterval(last, today)
 
@@ -220,12 +230,15 @@ class GitHubCity:
         if not new_user in self._myusers and not new_user in self._excluded:
             self._lockReadAddUser.release()
             self._myusers.add(new_user)
-            myNewUser = GitHubUser(new_user)
-            myNewUser.getData()
+
+            myNewUser = GitHubUser(new_user, server = self._userServer)
+            myNewUser.getData(self._debug)
+            myNewUser.getRealContributions()
 
             userLoc = myNewUser.getLocation()
             if not any(s in userLoc for s in self._excludedLocations):
                 self._dataUsers.append(myNewUser)
+
         else:
             self._lockReadAddUser.release()
 
@@ -263,7 +276,7 @@ class GitHubCity:
                     now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
                     self._logger.warning("Limit of API. Wait: "+str(reset - now_sec)+" secs")
                     time.sleep(reset - now_sec)
-                code = e.code
+                code = 0
 
         data = json.loads(response.read().decode('utf-8'))
         response.close()
@@ -288,11 +301,11 @@ class GitHubCity:
 
         """
         if not start_date or not final_date:
-            url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
+            url = self._server +"search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
                 "&order=desc&q=sort:joined+type:user" + self._urlLocations + \
                 "&sort=joined&order=asc&per_page=100&page=" + str(page)
         else:
-            url = "https://api.github.com/search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
+            url = self._server +"search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
                 "&order=desc&q=sort:joined+type:user" + self._urlLocations + \
                 "+created:" + start_date +\
                 ".." + final_date +\
@@ -365,7 +378,7 @@ class GitHubCity:
         while total_pages>=page:
             url = self._getURL(page, start_date, final_date)
             data = self._readAPI(url)
-            
+
             for u in data['items']:
                 self._names.put(u["login"])
             total_count = data["total_count"]
@@ -430,9 +443,15 @@ class GitHubCity:
         """
         comprobation = self._readAPI(self._getURL())
         self._bigCity = True
-        self._validInterval(datetime.date(2008, 1, 1), datetime.datetime.now().date())
+
+        if self._debug:
+            today = datetime.date(2016, 3, 20)
+        else:
+            today = datetime.datetime.now().date()
+
+        self._validInterval(datetime.date(2008, 1, 1), today)
         self._logger.info("Total number of intervals: "+ str(len(self._intervals)))
-        self._lastDay = datetime.datetime.now().date().strftime("%Y-%m-%d")
+        self._lastDay = today.strftime("%Y-%m-%d")
 
 
     def getTotalUsers(self):
@@ -444,21 +463,19 @@ class GitHubCity:
 
 
 
-    def getSortedUsers(self, order="contributions"):
+    def getSortedUsers(self, order="public"):
         """Returns a list with sorted users.
 
         Args:
             order (str): a str with one of these values (field to sort by).
-                - contributions
+                - contributions (total number of contributions)
+                - public (public contributions)
+                - private (private contributions)
                 - name
-                - lstreak
-                - cstreak
-                - language
                 - followers
-                - join:
+                - join
                 - organizations
                 - repositories
-                - stars
 
         Returns:
             str with a list of GitHubUsers by the field indicate. If
@@ -467,14 +484,12 @@ class GitHubCity:
         """
         if order == "contributions":
             self._dataUsers.sort(key=lambda u: u.getContributions(), reverse=True)
+        elif order == "public":
+            self._dataUsers.sort(key=lambda u: u.getPublicContributions(), reverse=True)
+        elif order == "private":
+            self._dataUsers.sort(key=lambda u: u.getPrivateContributions(), reverse=True)
         elif order == "name":
             self._dataUsers.sort(key=lambda u: u.getName(), reverse=True)
-        elif order == "lstreak":
-            self._dataUsers.sort(key=lambda u: u.getLongestStreak(), reverse=True)
-        elif order == "cstreak":
-            self._dataUsers.sort(key=lambda u: u.getCurrentStreak(), reverse=True)
-        elif order == "language":
-            self._dataUsers.sort(key=lambda u: u.getLanguage(), reverse=True)
         elif order == "followers":
             self._dataUsers.sort(key=lambda u: u.getFollowers(), reverse=True)
         elif order == "join":
@@ -483,8 +498,6 @@ class GitHubCity:
             self._dataUsers.sort(key=lambda u: u.getOrganizations(), reverse=True)
         elif order == "repositories":
             self._dataUsers.sort(key=lambda u: u.getNumberOfRepositories(), reverse=True)
-        elif order == "stars":
-            self._dataUsers.sort(key=lambda u: u.getStars(), reverse=True)
         return self._dataUsers
 
 

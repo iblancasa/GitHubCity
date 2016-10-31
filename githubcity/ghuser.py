@@ -32,6 +32,7 @@ from bs4 import BeautifulSoup
 import urllib.request
 from urllib.error import HTTPError, URLError
 import datetime, dateutil.parser
+from dateutil.relativedelta import relativedelta
 import re
 
 class GitHubUser:
@@ -39,27 +40,37 @@ class GitHubUser:
 
     Attributes:
         _name (str): Name of the user (private).
-        _contributions (int): total contributions of a user in the last year (private).
+        _contributions (int): total contributions of an user in the last year (private).
+        _public (int): public contributions of an user in the last year (private).
+        _private (int): private contributions of an user in the last year (private).
         _followers (int): total number of followers of an user (private).
-        _longestStreak (int): maximum number of consecutive days with activity (private).
         _numRepos (int): number of repositories of an user (private).
-        _stars (int): number of total stars given to the user (private).
         _organizations (int): number of public organizations where the user is (private).
         _join (str): when the user joined to GitHub. Format: %Y-%M-%DT%H:%i:%sZ (private).
         _avatar (str): URL where the user's avatar is (private).
-        _language (str): language most user by the user (private).
-        _currentStreak (int): actual number of consecutive days making contributions (private).
+        _bio (str): bio of the user (private).
     """
 
-    def __init__(self, name):
+    def __init__(self, name, server="https://github.com/"):
         """Constructor of the class.
         Args:
             name (str): name (login) of an user in GitHub
+            server (str): server to query data. Default: https://github.com/
 
         Returns:
             a new instance of GitHubUser class
         """
         self._name = name
+        self._server = server
+        self._followers = -1
+        self._numRepos = -1
+        self._organizations = -1
+        self._contributions = -1
+        self._join = ""
+        self._avatar = ""
+        self._bio = ""
+        self._public = -1
+        self._private = -1
 
     def export(self):
         """Export all attributes of the user to a dict
@@ -69,15 +80,14 @@ class GitHubUser:
         data = {}
         data["name"] = self.getName()
         data["contributions"] = self.getContributions()
-        data["longestStreak"] = self.getLongestStreak()
-        data["currentStreak"] = self.getCurrentStreak()
-        data["language"] = self.getLanguage()
         data["avatar"] = self.getAvatar()
         data["followers"] = self.getFollowers()
         data["join"] = self.getJoin()
         data["organizations"] = self.getOrganizations()
         data["repositories"] = self.getNumberOfRepositories()
-        data["stars"] = self.getStars()
+        data["bio"] = self.getBio()
+        data["private"] = self.getPrivateContributions()
+        data["public"] = self.getPublicContributions()
         return data
 
 
@@ -93,33 +103,8 @@ class GitHubUser:
         Returns:
             int with the number of public contributions of the user
         """
-
         return self._contributions
 
-    def getLongestStreak(self):
-        """Get the longest streak of the user
-
-        Returns:
-            int with the longest streak of the user
-        """
-        return self._longestStreak
-
-    def getCurrentStreak(self):
-        """Get the current streak of the user
-
-        Returns:
-            int with the current streak of the user
-        """
-        return self._currentStreak
-
-    def getLanguage(self):
-        """Get the most used language by the user
-
-        Returns:
-            str with the language most used
-
-        """
-        return self._language
 
     def getAvatar(self):
         """Get the URL where the avatar is
@@ -151,7 +136,6 @@ class GitHubUser:
         Returns:
             a str with this time format %Y-%M-%DT%H:%i:%sZ
         """
-
         return self._join
 
     def getOrganizations(self):
@@ -171,70 +155,111 @@ class GitHubUser:
         """
         return self._numRepos
 
-    def getStars(self):
-        """Get number of stars given from GitHub users to repositories created by this user
+    def getBio(self):
+        """Get the bio of the user
 
         Returns:
-            int with the number of stars
+            str with the bio
         """
-        return self._stars
+        return self._bio
 
+    def getPublicContributions(self):
+        """Get only the public contributions of the user
 
-    def getData(self):
+        Returns:
+            int with the number of public contributions
+        """
+        return self._public
+
+    def getPrivateContributions(self):
+        """Get the number of private contributions of the user
+
+        Returns:
+            int with the number of private contributions
+        """
+        return self._private
+
+    def getData(self, debug = False):
         """Get data of a GitHub user.
         """
+        if not debug:
+            url = self._server + self._name
+            data = self._getDataFromURL(url)
+            web = BeautifulSoup(data,"lxml")
 
-        url = "https://github.com/"+self._name
+            contributions_raw = web.find_all('h2',{'class': 'f4 text-normal mb-3'})
 
-        data = self._getDataFromURL(url)
-        web = BeautifulSoup(data,"lxml")
+            self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0].replace(",",""))
 
-        #Contributions, longest streak and current streak
-        contributions_raw = web.find_all('span',{'class':'contrib-number'})
-        self._contributions = int(contributions_raw[0].text.split(" ")[0].replace(",",""))
-        self._longestStreak = int(contributions_raw[1].text.split(" ")[0].replace(",",""))
-        self._currentStreak = int(contributions_raw[2].text.split(" ")[0].replace(",",""))
+            #Avatar
+            self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
 
-        #Language
-        self._language = web.find("meta", {"name":"description"})['content'].split(" ")[6]
-        if self._language[len(self._language)-1]==",":
-            self._language = self._language[:-1]
 
-        #Avatar
-        self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
+            counters = web.find_all('span',{'class':'counter'})
 
-        #Followers
-        vcard = web.find_all("strong", {"class":"vcard-stat-count"})
-        if "k" in vcard[0].text:
-            self._followers = int(float(vcard[0].text[:-1].replace('\.',','))*1000)
+            #Number of repositories
+            self._numRepos = int(counters[0].text)
+
+            #Followers
+            self._followers = int(counters[2].text)
+
+            #Location
+            self._location = web.find("li", {"itemprop":"homeLocation"}).text
+
+            #Date of creation
+            join = dateutil.parser.parse(web.find("local-time",{"class":"join-date"})["datetime"])
+            self._join = join.strftime("%Y-%m-%d %H:%M:%S %Z")
+
+            #Bio
+            bio = web.find_all("div",{"class":"user-profile-bio"})
+            if len(bio)>0:
+                self._bio = bio[0].text
+            else:
+                self._bio=""
+
+            #Number of organizations
+            self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
+
+
         else:
-            self._followers = int(vcard[0].text)
+            self._contributions = 1000
+            self._avatar =""
+            self._followers = 1
+            self._join = "2013-06-24"
+            self._organizations = 1
+            self._numRepos = 1
+            self._location = "Barcelona"
+            self._bio ="Bio"
 
-        #Location
-        self._location = web.find("li", {"itemprop":"homeLocation"}).text
 
-        #Date of creation
-        self._join = dateutil.parser.parse(web.find("time",{"class":"join-date"})["datetime"])
 
-        #Number of organizations
-        self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
+    def getRealContributions(self):
+        datefrom = datetime.datetime.now() - relativedelta(days=366)
+        dateto = datefrom + relativedelta(months=1) - relativedelta(days=1)
+        private = 0
 
-        #Number of repos
-        url +="?tab=repositories"
-        data = self._getDataFromURL(url)
-        web = BeautifulSoup(data,"lxml")
+        while datefrom < datetime.datetime.now():
+            fromstr = datefrom.strftime("%Y-%m-%d")
+            tostr = dateto.strftime("%Y-%m-%d")
+            url = "https://github.com/"+self._name+"?tab=overview&from="+fromstr+"&to="+tostr
+            data = self._getDataFromURL(url)
+            web = BeautifulSoup(data,"lxml")
 
-        repos = web.find_all("a",{"aria-label":"Stargazers"})
-        self._numRepos = (len(repos))
 
-        #Number of total stars
-        stars = 0
-        non_decimal = re.compile(r'[^\d]+')
+            ppcontributions = web.find_all('span',{'class':'m-0 text-gray'})
 
-        for repo in repos:
-            stars += int(non_decimal.sub('', repo.text))
+            for contrib in ppcontributions:
+                private+=int(contrib.text.lstrip().strip(" ")[0])
 
-        self._stars = stars
+
+            datefrom += relativedelta(months=1)
+            dateto += relativedelta(months=1)
+
+        self._private = private
+        self._public = self._contributions - private
+
+
+
 
     def _getDataFromURL(self, url):
         """Read HTML data from an user GitHub profile (private).
@@ -252,7 +277,10 @@ class GitHubUser:
         code = 0
 
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
-               'Accept': 'text/html'
+               'Accept': 'text/html',
+               'Pragma': 'no-cache',
+               'Connection': 'keep-alive',
+               'X-PJAX': 'true'
                }
 
         while code != 200:
