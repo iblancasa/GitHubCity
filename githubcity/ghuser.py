@@ -179,57 +179,46 @@ class GitHubUser:
         """
         return self._private
 
-    def getData(self, debug = False):
+    def getData(self):
         """Get data of a GitHub user.
         """
-        if not debug:
-            url = self._server + self._name
-            data = self._getDataFromURL(url)
-            web = BeautifulSoup(data,"lxml")
 
-            contributions_raw = web.find_all('h2',{'class': 'f4 text-normal mb-3'})
+        url = self._server + self._name
+        data = self._getDataFromURL(url)
+        web = BeautifulSoup(data,"lxml")
 
-            self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0].replace(",",""))
+        contributions_raw = web.find_all('h2',{'class': 'f4 text-normal mb-3'})
 
-            #Avatar
-            self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
+        self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0].replace(",",""))
 
-
-            counters = web.find_all('span',{'class':'counter'})
-
-            #Number of repositories
-            self._numRepos = int(counters[0].text)
-
-            #Followers
-            self._followers = int(counters[2].text)
-
-            #Location
-            self._location = web.find("li", {"itemprop":"homeLocation"}).text
-
-            #Date of creation
-            join = dateutil.parser.parse(web.find("local-time",{"class":"join-date"})["datetime"])
-            self._join = join.strftime("%Y-%m-%d %H:%M:%S %Z")
-
-            #Bio
-            bio = web.find_all("div",{"class":"user-profile-bio"})
-            if len(bio)>0:
-                self._bio = bio[0].text
-            else:
-                self._bio=""
-
-            #Number of organizations
-            self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
+        #Avatar
+        self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
 
 
+        counters = web.find_all('span',{'class':'counter'})
+
+        #Number of repositories
+        self._numRepos = int(counters[0].text)
+
+        #Followers
+        self._followers = int(counters[2].text)
+
+        #Location
+        self._location = web.find("li", {"itemprop":"homeLocation"}).text
+
+        #Date of creation
+        join = dateutil.parser.parse(web.find("local-time",{"class":"join-date"})["datetime"])
+        self._join = join.strftime("%Y-%m-%d %H:%M:%S %Z")
+
+        #Bio
+        bio = web.find_all("div",{"class":"user-profile-bio"})
+        if len(bio)>0:
+            self._bio = bio[0].text
         else:
-            self._contributions = 1000
-            self._avatar =""
-            self._followers = 1
-            self._join = "2013-06-24"
-            self._organizations = 1
-            self._numRepos = 1
-            self._location = "Barcelona"
-            self._bio ="Bio"
+            self._bio=""
+
+        #Number of organizations
+        self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
 
 
 

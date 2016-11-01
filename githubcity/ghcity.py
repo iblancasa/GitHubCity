@@ -69,12 +69,11 @@ class GitHubCity:
         _fin (bool): check if there are more users to process (private).
         _locations (list): list of locations where search users (private).
         __urlLocations (str): string with the locations formatted to GitHub API URL (private).
-
     """
 
 
     def __init__(self, githubID, githubSecret, config=None, city=None, locations=None,
-                excludedUsers=None, excludedLocations=None, server="https://api.github.com/", userServer="https://github.com/", debug=False, log=True):
+                excludedUsers=None, excludedLocations=None, server="https://api.github.com/", userServer="https://github.com/", log=True):
         """Constructor of the class.
 
         Note:
@@ -90,7 +89,6 @@ class GitHubCity:
             excludedUsers (dir): excluded users of the ranking (optional).
             excludedLocations (list): excluded locations (optional).
             server (str): server to query (optional).
-            debug (bool): debug mode (optional).
             log (bool): show log in terminal(optional).
 
         Returns:
@@ -112,7 +110,6 @@ class GitHubCity:
         self._threads = set()
         self._logger = logging.getLogger("GitHubCity")
 
-        self._debug = debug
         self._log = log
 
         self._fin = False
@@ -195,10 +192,7 @@ class GitHubCity:
 
         self._addLocationsToURL(self._locations)
         last = datetime.datetime.strptime(self._lastDay, "%Y-%m-%d")
-        if self._debug:
-            today = datetime.date(2016, 3, 20)
-        else:
-            today = datetime.datetime.now().date()
+        today = datetime.datetime.now().date()
 
         self._validInterval(last, today)
 
@@ -232,7 +226,7 @@ class GitHubCity:
             self._myusers.add(new_user)
 
             myNewUser = GitHubUser(new_user, server = self._userServer)
-            myNewUser.getData(self._debug)
+            myNewUser.getData()
             myNewUser.getRealContributions()
 
             userLoc = myNewUser.getLocation()
@@ -444,10 +438,7 @@ class GitHubCity:
         comprobation = self._readAPI(self._getURL())
         self._bigCity = True
 
-        if self._debug:
-            today = datetime.date(2016, 3, 20)
-        else:
-            today = datetime.datetime.now().date()
+        today = datetime.datetime.now().date()
 
         self._validInterval(datetime.date(2008, 1, 1), today)
         self._logger.info("Total number of intervals: "+ str(len(self._intervals)))
