@@ -1,9 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""This module allow to developers to get all users of GitHub that have a given
-city in their profile. For example, if I want getting all users from London,
-I will get all users that have London in their profiles (they could live in London or not)
+"""
+This module allow to developers to get all users of GitHub that have a
+given city in their profile. For example, if I want getting all users
+from London,. I will get all users that have London in their
+profiles (they could live in London or not)
 
 Author: Israel Blancas @iblancasa
 Original idea: https://github.com/JJ/github-city-rankings
@@ -12,21 +11,26 @@ License:
 The MIT License (MIT)
     Copyright (c) 2015 Israel Blancas @iblancasa (http://iblancasa.com/)
 
-    Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-    and associated documentation files (the “Software”), to deal in the Software without
-    restriction, including without limitation the rights to use, copy, modify, merge, publish,
-    distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom
-    the Software is furnished to do so, subject to the following conditions:
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the “Software”), to deal in the Software
+    without restriction, including without
+    limitation the rights to use, copy, modify, merge,
+    publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
 
-    The above copyright notice and this permission notice shall be included in all copies or
-    substantial portions of the Software.
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
 
-    THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-    PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-    FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-    IN THE SOFTWARE.
+    THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+    WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+    PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+    OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+    USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
 
@@ -35,19 +39,18 @@ import urllib.parse
 import threading
 import datetime
 import calendar
-import time
 import queue
-import pystache
+import time
 import json
-from urllib.error import HTTPError
-from dateutil.relativedelta import relativedelta
 import os
 import sys
 import logging
-import coloredlogs
-sys.path.append(os.getcwd())
+import pystache
+from dateutil.relativedelta import relativedelta
+import coloredlog
 from githubcity import ghuser
 GitHubUser = ghuser.GitHubUser
+
 
 class GitHubCity:
     """Manager of a GithubCity.
@@ -61,24 +64,34 @@ class GitHubCity:
         _excluded (set): set of names of excluded users (private).
         _excludedLocations (set): set of excluded locations (private).
         _lastDay (str): day of last interval (private).
-        _names (Queue): Queue with all users that we still have to process (private).
+        _names (Queue): Queue with all users that we still have
+        to process (private).
         _threads (set): Set of active Threads (private).
         _logger (logger): Logger (private).
-        _lockGetUser (Lock): lock to solve problems with threads in get user (private).
-        _lockReadAddUser (Lock): lock to solve problems with threads in check if an user is repeated(private).
+        _lockGetUser (Lock): lock to solve problems with threads in
+        get user (private).
+        _lockReadAddUser (Lock): lock to solve problems with threads
+        in check if an user is repeated(private).
         _fin (bool): check if there are more users to process (private).
         _locations (list): list of locations where search users (private).
-        __urlLocations (str): string with the locations formatted to GitHub API URL (private).
+        __urlLocations (str): string with the locations formatted to
+        GitHub API URL (private).
     """
 
-
-    def __init__(self, githubID, githubSecret, config=None, city=None, locations=None,
-                excludedUsers=None, excludedLocations=None, server="https://api.github.com/", userServer="https://github.com/", log=True):
+    def __init__(self,
+                 githubID,
+                 githubSecret,
+                 config=None,
+                 city=None,
+                 locations=None,
+                 excludedUsers=None,
+                 excludedLocations=None,
+                 log=True):
         """Constructor of the class.
 
         Note:
-            To get your ID and secret, you will need to create an application in
-            https://github.com/settings/applications/new .
+            To get your ID and secret, you will need to create an
+            application in https://github.com/settings/applications/new .
 
         Args:
             githubID (str): ID of your GitHub application.
@@ -95,12 +108,11 @@ class GitHubCity:
             a new instance of GithubCity class
 
         """
-
-        if githubID==None:
+        if not githubID:
             raise Exception("No GitHub ID inserted")
         self._githubID = githubID
 
-        if githubSecret==None:
+        if not githubSecret:
             raise Exception("No GitHub Secret inserted")
         self._githubSecret = githubSecret
 
@@ -109,9 +121,7 @@ class GitHubCity:
         self._dataUsers = []
         self._threads = set()
         self._logger = logging.getLogger("GitHubCity")
-
         self._log = log
-
         self._fin = False
         self._lockGetUser = threading.Lock()
         self._lockReadAddUser = threading.Lock()
@@ -122,8 +132,8 @@ class GitHubCity:
             self._addLocationsToURL(self._locations)
         else:
             self._city = city
-            self._locations  = locations
-            self._intervals=[]
+            self._locations = locations
+            self._intervals = []
 
             if not self._locations:
                 self._locations = []
@@ -137,7 +147,6 @@ class GitHubCity:
                 for e in excludedUsers:
                     self._excluded.add(e)
 
-
             self._excludedLocations = set()
             if excludedLocations:
                 for e in excludedLocations:
@@ -147,30 +156,28 @@ class GitHubCity:
         if log:
             coloredlogs.install(level='DEBUG')
 
-
-
-
-    def __str__(self):
-        """str the class"""
+    def __tr__(self):
+        """Str the class."""
         return str(self.getConfig())
 
     def _addLocationsToURL(self, locations):
-        """Format all locations to GitHub's URL API
+        """Format all locations to GitHub's URL API.
 
         Note:
             This method is private.
 
         Args:
-            locations (list): list of str where each str is a location where search
+            locations (list): list of str where each str
+            is a location where search
         """
         self._urlLocations = ""
 
         for l in self._locations:
-            self._urlLocations += "+location:\"" + str(urllib.parse.quote(l))+"\""
-
+            self._urlLocations += "+location:\"" +\
+             + str(urllib.parse.quote(l))+"\""
 
     def readConfig(self, config):
-        """Read config from a dict
+        """Read config from a dict.
 
         Args:
             config: config to read (see cityconfigschema.json)
@@ -196,11 +203,8 @@ class GitHubCity:
 
         self._validInterval(last, today)
 
-
-
-
     def readConfigFromJSON(self, fileName):
-        """Read configuration from a file
+        """Read configuration from a file.
 
         Args:
             fileName (str): name of a config file (see cityconfigschema.json)
@@ -214,18 +218,19 @@ class GitHubCity:
 
         Note:
             This method is private.
-            If the user is yet in the list (or in excluded users list), he/she will not be added
+            If the user is yet in the list (or in excluded users list),
+            he/she will not be added
 
         Args:
             new_user (str): name of a GitHub user to include in the ranking
 
         """
         self._lockReadAddUser.acquire()
-        if not new_user in self._myusers and not new_user in self._excluded:
+        if new_user not in self._myusers and new_user not in self._excluded:
             self._lockReadAddUser.release()
             self._myusers.add(new_user)
 
-            myNewUser = GitHubUser(new_user, server = self._userServer)
+            myNewUser = GitHubUser(new_user)
             myNewUser.getData()
             myNewUser.getRealContributions()
 
@@ -236,27 +241,29 @@ class GitHubCity:
         else:
             self._lockReadAddUser.release()
 
-
-
     def _readAPI(self, url):
         """Read a petition to the GitHub API (private).
 
         Note:
             This method is private.
-            If max number of request is reached, method will some time (header says).
+            If max number of request is reached,
+            method will some time (header says).
 
         Args:
             url (str): URL to query.
 
         Returns:
             The response of the API -a dictionary with these fields-:
-                * total_count (int): number of total users that match with the search
-                * incomplete_results (bool): https://developer.github.com/v3/search/#timeouts-and-incomplete-results
-                * items (List[dict]): a list with the users that match with the search
+                * total_count (int): number of total
+                users that match with the search
+                * incomplete_results (bool):
+                https://developer.github.com/v3/search/#timeouts-and-incomplete-results
+                * items (List[dict]): a list with the
+                users that match with the search
         """
-
         code = 0
-        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
+        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) ' +
+               'libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
                'Accept': 'application/vnd.github.v3.text-match+json'
                }
         while code != 200:
@@ -265,10 +272,12 @@ class GitHubCity:
                 response = urllib.request.urlopen(req)
                 code = response.code
             except urllib.error.URLError as e:
-                if hasattr(e,"getheader"):
+                if hasattr(e, "getheader"):
                     reset = int(e.getheader("X-RateLimit-Reset"))
-                    now_sec = calendar.timegm(datetime.datetime.utcnow().utctimetuple())
-                    self._logger.warning("Limit of API. Wait: "+str(reset - now_sec)+" secs")
+                    utcAux = datetime.datetime.utcnow().utctimetuple()
+                    now_sec = calendar.timegm(utcAux)
+                    self._logger.warning("Limit of API. Wait: " +
+                                         str(reset - now_sec)+" secs")
                     time.sleep(reset - now_sec)
                 code = 0
 
@@ -276,9 +285,8 @@ class GitHubCity:
         response.close()
         return data
 
-
-
-    def _getURL(self, page=1, start_date=None, final_date=None,order="asc"):
+    def _getURL(self, page=1, start_date=None, final_date=None,
+                order="asc"):
         """Get the API's URL to query to get data about users (private).
 
         Note:
@@ -288,66 +296,63 @@ class GitHubCity:
             page (int): number of the page.
             start_date (str): start date of the range to search users (Y-m-d).
             final_date (str): final date of the range to search users (Y-m-d).
-            order (str): order of the query. Valid values are 'asc' or 'desc'. Default: asc
+            order (str): order of the query. Valid values are 'asc' or
+            'desc'. Default: asc
 
         Returns:
             The URL (str) to query.
 
         """
         if not start_date or not final_date:
-            url = self._server +"search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
-                "&order=desc&q=sort:joined+type:user" + self._urlLocations + \
-                "&sort=joined&order=asc&per_page=100&page=" + str(page)
+            url = self._server + "search/users?client_id=" + self._githubID + \
+             "&client_secret=" + self._githubSecret + \
+             "&order=desc&q=sort:joined+type:user" + self._urlLocations + \
+             "&sort=joined&order=asc&per_page=100&page=" + str(page)
         else:
-            url = self._server +"search/users?client_id=" + self._githubID + "&client_secret=" + self._githubSecret + \
-                "&order=desc&q=sort:joined+type:user" + self._urlLocations + \
-                "+created:" + start_date +\
-                ".." + final_date +\
-                "&sort=joined&order="+order+"&per_page=100&page=" + str(page)
+            url = self._server + "search/users?client_id=" + self._githubID + \
+                  "&client_secret=" + self._githubSecret + \
+                  "&order=desc&q=sort:joined+type:user" + \
+                  self._urlLocations + "+created:" + start_date +\
+                  ".." + final_date +\
+                  "&sort=joined&order="+order+"&per_page=100&page=" + str(page)
         return url
 
-
-
     def _processUsers(self):
-        """Process users of the queue (get from the queue an add user) (private)
+            """Process users of the queue (get from the queue an add user) (private).
 
             Note:
                 This method is private.
 
-        """
-        while(self._names.empty() and not self._fin):
-            pass
-
-        while not self._fin or not self._names.empty():
-            self._lockGetUser.acquire()
-            try:
-                new_user = self._names.get(False)
-            except queue.Empty:
-                self._lockGetUser.release()
-                return
-            else:
-                self._lockGetUser.release()
-                self._addUser(new_user)
-                self._logger.debug(str(self._names.qsize())+" users to process")
-
-
+            """
+            while(self._names.empty() and not self._fin):
+                pass
+            while not self._fin or not self._names.empty():
+                self._lockGetUser.acquire()
+                try:
+                    new_user = self._names.get(False)
+                except queue.Empty:
+                    self._lockGetUser.release()
+                    return
+                else:
+                    self._lockGetUser.release()
+                    self._addUser(new_user)
+                    self._logger.debug(str(self._names.qsize()) +
+                                       " users to  process")
 
     def _launchThreads(self, numThreads):
-        """Launch some threads and call to 'processUsers' (private)
+        """Launch some threads and call to 'processUsers' (private).
 
         Note:
             This method is private.
 
         """
         i = 0
-        while i<numThreads:
-            i+=1
+        while i < numThreads:
+            i += 1
             newThr = threading.Thread(target=self._processUsers)
             newThr.setDaemon(True)
             self._threads.add(newThr)
             newThr.start()
-
-
 
     def _getPeriodUsers(self, start_date, final_date):
         """Get all the users given a period (private).
@@ -357,11 +362,11 @@ class GitHubCity:
             User's names are added to the private _name attribute.
 
         Args:
-            start_date (datetime.date): start date of the range to search users.
-            final_date (datetime.date): final date of the range to search users.
-
+            start_date (datetime.date): start date of the range to search users
+            final_date (datetime.date): final date of the range to search users
         """
-        self._logger.info("Getting users from " + start_date + " to " + final_date)
+        self._logger.info("Getting users from " + start_date +
+                          " to " + final_date)
 
         url = self._getURL(1, start_date, final_date)
         data = self._readAPI(url)
@@ -369,7 +374,7 @@ class GitHubCity:
         total_pages = 10000
         page = 1
 
-        while total_pages>=page:
+        while total_pages >= page:
             url = self._getURL(page, start_date, final_date)
             data = self._readAPI(url)
 
@@ -379,12 +384,9 @@ class GitHubCity:
             total_pages = int(total_count / 100) + 1
             page += 1
 
-
-
     def getCityUsers(self):
-        """Get all the users from the city.
-        """
-        if len(self._intervals)==0:
+        """Get all the users from the city."""
+        if len(self._intervals) == 0:
             self.calculateBestIntervals()
 
         self._fin = False
@@ -403,13 +405,13 @@ class GitHubCity:
         for t in self._threads:
             t.join()
 
-
-
     def _validInterval(self, start, finish):
-        """Given a valid interval, check if the interval is correct (less than 1000 users).
-        If the interval is correct, it will be added to '_intervals' attribute. Else,
-        interval will be split in two news intervals and these intervals will be
-        checked.
+        """Given a valid interval, check if the interval is correct.
+
+        An interval is correct if it has less than 1001 users.
+        If the interval is correct, it will be added to '_intervals' attribute.
+        Else, interval will be split in two news intervals and
+        these intervals will be checked.
 
         Args:
             start (datetime.date): start date of the interval
@@ -420,42 +422,42 @@ class GitHubCity:
             Valid periods are added to the private _intervals attribute.
 
         """
-        data = self._readAPI(self._getURL(1,start.strftime("%Y-%m-%d"),finish.strftime("%Y-%m-%d")))
-        if data["total_count"]>=1000:
+        data = self._readAPI(self._getURL(1,
+                             start.strftime("%Y-%m-%d"),
+                             finish.strftime("%Y-%m-%d")))
+        if data["total_count"] >= 1000:
             middle = start + (finish - start)/2
-            self._validInterval(start,middle)
-            self._validInterval(middle,finish)
+            self._validInterval(start, middle)
+            self._validInterval(middle, finish)
         else:
-            self._intervals.append([start.strftime("%Y-%m-%d"),finish.strftime("%Y-%m-%d")])
-            self._logger.debug("Valid interval: "+start.strftime("%Y-%m-%d")+" to "+\
-            finish.strftime("%Y-%m-%d"))
-
-
+            self._intervals.append([start.strftime("%Y-%m-%d"),
+                                   finish.strftime("%Y-%m-%d")])
+            self._logger.debug("Valid interval: " +
+                               start.strftime("%Y-%m-%d") + " to " +
+                               finish.strftime("%Y-%m-%d"))
 
     def calculateBestIntervals(self):
-        """Calcules valid intervals of a city (with less than 1000 users)
-        """
+        """Calcule valid intervals of a city (with less than 1000 users)."""
         comprobation = self._readAPI(self._getURL())
         self._bigCity = True
 
         today = datetime.datetime.now().date()
 
         self._validInterval(datetime.date(2008, 1, 1), today)
-        self._logger.info("Total number of intervals: "+ str(len(self._intervals)))
+        self._logger.info("Total number of intervals: " +
+                          str(len(self._intervals)))
         self._lastDay = today.strftime("%Y-%m-%d")
 
-
     def getTotalUsers(self):
-        """Get the number of calculated users
+        """Get the number of calculated users.
+
         Returns:
             Number (int) of calculated users
         """
         return len(self._dataUsers)
 
-
-
     def getSortedUsers(self, order="public"):
-        """Returns a list with sorted users.
+        """Return a list with sorted users.
 
         Args:
             order (str): a str with one of these values (field to sort by).
@@ -474,11 +476,14 @@ class GitHubCity:
 
         """
         if order == "contributions":
-            self._dataUsers.sort(key=lambda u: u.getContributions(), reverse=True)
+            self._dataUsers.sort(key=lambda u: u.getContributions(),
+                                 reverse=True)
         elif order == "public":
-            self._dataUsers.sort(key=lambda u: u.getPublicContributions(), reverse=True)
+            self._dataUsers.sort(key=lambda u: u.getPublicContributions(),
+                                 reverse=True)
         elif order == "private":
-            self._dataUsers.sort(key=lambda u: u.getPrivateContributions(), reverse=True)
+            self._dataUsers.sort(key=lambda u: u.getPrivateContributions(),
+                                 reverse=True)
         elif order == "name":
             self._dataUsers.sort(key=lambda u: u.getName(), reverse=True)
         elif order == "followers":
@@ -486,14 +491,15 @@ class GitHubCity:
         elif order == "join":
             self._dataUsers.sort(key=lambda u: u.getJoin(), reverse=True)
         elif order == "organizations":
-            self._dataUsers.sort(key=lambda u: u.getOrganizations(), reverse=True)
+            self._dataUsers.sort(key=lambda u: u.getOrganizations(),
+                                 reverse=True)
         elif order == "repositories":
-            self._dataUsers.sort(key=lambda u: u.getNumberOfRepositories(), reverse=True)
+            self._dataUsers.sort(key=lambda u: u.getNumberOfRepositories(),
+                                 reverse=True)
         return self._dataUsers
 
-
     def getConfig(self):
-        """Returns the configuration of the city
+        """Return the configuration of the city.
 
         Returns:
             configuration of the city (dict)
@@ -502,8 +508,8 @@ class GitHubCity:
         config["name"] = self._city
         config["intervals"] = self._intervals
         config["last_date"] = self._lastDay
-        config["excludedUsers"]=[]
-        config["excludedLocations"]=[]
+        config["excludedUsers"] = []
+        config["excludedLocations"] = []
 
         for e in self._excluded:
             config["excludedUsers"].append(e)
@@ -511,12 +517,11 @@ class GitHubCity:
         for e in self._excludedLocations:
             config["excludedLocations"].append(e)
 
-        config["locations"]=self._locations
+        config["locations"] = self._locations
         return config
 
-
     def configToJson(self, fileName):
-        """Saves the configuration of the city in a json
+        """Save the configuration of the city in a JSON.
 
         Args:
             fileName (str): where save the configuration
@@ -525,12 +530,12 @@ class GitHubCity:
         with open(fileName, "w") as outfile:
             json.dump(config, outfile, indent=4, sort_keys=True)
 
-
     def export(self, template_file_name, output_file_name, sort):
-        """Export ranking to a file
+        """Export ranking to a file.
 
         Args:
-            template_file_name (str): where is the template (moustache template)
+            template_file_name (str): where is the template
+                (moustache template)
             output_file_name (str): where create the file with the ranking
             sort (str): field to sort the users
         """
@@ -545,11 +550,10 @@ class GitHubCity:
             userExported["position"] = position
             exportedUsers.append(userExported)
 
-            if position  < len(dataUsers):
+            if position < len(dataUsers):
                 userExported["comma"] = True
 
-            position+=1
-
+            position += 1
 
         exportedData["users"] = exportedUsers
 
