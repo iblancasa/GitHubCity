@@ -13,7 +13,7 @@ The MIT License (MIT)
 
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
-    files (the “Software”), to deal in the Software
+    files (the Software), to deal in the Software
     without restriction, including without
     limitation the rights to use, copy, modify, merge,
     publish, distribute, sublicense, and/or sell
@@ -23,7 +23,7 @@ The MIT License (MIT)
     The above copyright notice and this permission notice shall be
     included in all copies or substantial portions of the Software.
 
-    THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+    THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
     WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
     PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
@@ -47,7 +47,7 @@ import sys
 import logging
 import pystache
 from dateutil.relativedelta import relativedelta
-import coloredlog
+import coloredlogs
 from githubcity import ghuser
 GitHubUser = ghuser.GitHubUser
 
@@ -101,7 +101,6 @@ class GitHubCity:
             locations (list): locations where search users (optional).
             excludedUsers (dir): excluded users of the ranking (optional).
             excludedLocations (list): excluded locations (optional).
-            server (str): server to query (optional).
             log (bool): show log in terminal(optional).
 
         Returns:
@@ -125,7 +124,7 @@ class GitHubCity:
         self._fin = False
         self._lockGetUser = threading.Lock()
         self._lockReadAddUser = threading.Lock()
-        self._server = server
+        self._server = "https://api.github.com/"
 
         if config:
             self.readConfig(config)
@@ -152,7 +151,7 @@ class GitHubCity:
                 for e in excludedLocations:
                     self._excludedLocations.add(e)
 
-            self._userServer = userServer
+            self._userServer = "https://github.com/"
         if log:
             coloredlogs.install(level='DEBUG')
 
@@ -173,8 +172,8 @@ class GitHubCity:
         self._urlLocations = ""
 
         for l in self._locations:
-            self._urlLocations += "+location:\"" +\
-             + str(urllib.parse.quote(l))+"\""
+            self._urlLocations += "+location:\""\
+             + str(urllib.parse.quote(l)) + "\""
 
     def readConfig(self, config):
         """Read config from a dict.

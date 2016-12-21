@@ -184,10 +184,12 @@ class GitHubUser:
         """
 
         url = self._server + self._name
+
         data = self._getDataFromURL(url)
+
         web = BeautifulSoup(data,"lxml")
 
-        contributions_raw = web.find_all('h2',{'class': 'f4 text-normal mb-3'})
+        contributions_raw = web.find_all('h2',{'class': 'f4 text-normal mb-2'})
 
         self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0].replace(",",""))
 
