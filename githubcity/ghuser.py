@@ -240,7 +240,7 @@ class GitHubUser:
             ppcontributions = web.find_all('span',{'class':'f4 lh-condensed m-0 text-gray'})
 
             for contrib in ppcontributions:
-                private+=int(contrib.text.lstrip().strip(" ")[0])
+                private+=int(contrib.text.lstrip().replace("\n"," ").partition(" ")[0])
 
 
             datefrom += relativedelta(months=1)
