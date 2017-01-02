@@ -279,6 +279,10 @@ class GitHubCity:
                                          str(reset - now_sec)+" secs")
                     time.sleep(reset - now_sec)
                 code = 0
+            except URLError as e:
+                time.sleep(3)
+            except Exception as e:
+                time.sleep(5)
 
         data = json.loads(response.read().decode('utf-8'))
         response.close()
