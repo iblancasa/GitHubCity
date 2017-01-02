@@ -286,6 +286,8 @@ class GitHubUser:
                     break;
             except URLError as e:
                 time.sleep(3)
+            except Exception as e:
+                time.sleep(5)
 
         if code == 404:
                 raise Exception("User was not found")
