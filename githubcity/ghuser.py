@@ -237,7 +237,7 @@ class GitHubUser:
             web = BeautifulSoup(data,"lxml")
 
 
-            ppcontributions = web.find_all('span',{'class':'m-0 text-gray'})
+            ppcontributions = web.find_all('span',{'class':'f4 lh-condensed m-0 text-gray'})
 
             for contrib in ppcontributions:
                 private+=int(contrib.text.lstrip().strip(" ")[0])

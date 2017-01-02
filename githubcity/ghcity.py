@@ -529,7 +529,7 @@ class GitHubCity:
         with open(fileName, "w") as outfile:
             json.dump(config, outfile, indent=4, sort_keys=True)
 
-    def export(self, template_file_name, output_file_name, sort):
+    def export(self, template_file_name, output_file_name, sort, data = None):
         """Export ranking to a file.
 
         Args:
@@ -555,6 +555,7 @@ class GitHubCity:
             position += 1
 
         exportedData["users"] = exportedUsers
+        exportedData["extraData"] = data
 
         with open(template_file_name) as template_file:
             template_raw = template_file.read()
