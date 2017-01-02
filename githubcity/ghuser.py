@@ -215,7 +215,7 @@ class GitHubUser:
         #Bio
         bio = web.find_all("div",{"class":"user-profile-bio"})
         if len(bio)>0:
-            self._bio = bio[0].text
+            self._bio = bio[0].text.replace("\n","").replace("\t"," ").replace("\"","").replace("\'","")
         else:
             self._bio=""
 
