@@ -203,7 +203,11 @@ class GitHubUser:
         self._numRepos = int(counters[0].text)
 
         #Followers
-        self._followers = int(counters[2].text)
+        if not 'k' in counters[2].text:
+            self._followers = int(counters[2].text)
+        else:
+            aux = counters[2].text.replace(" ","").replace("\n","").replace("k","")
+            self._followers = int(aux.split(".")[0])*1000 + int(aux.split(".")[1]) * 100
 
         #Location
         self._location = web.find("li", {"itemprop":"homeLocation"}).text
