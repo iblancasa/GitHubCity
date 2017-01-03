@@ -179,57 +179,52 @@ class GitHubUser:
         """
         return self._private
 
-    def getData(self, debug = False):
+    def getData(self):
         """Get data of a GitHub user.
         """
-        if not debug:
-            url = self._server + self._name
-            data = self._getDataFromURL(url)
-            web = BeautifulSoup(data,"lxml")
 
-            contributions_raw = web.find_all('h2',{'class': 'f4 text-normal mb-3'})
+        url = self._server + self._name
 
-            self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0].replace(",",""))
+        data = self._getDataFromURL(url)
 
-            #Avatar
-            self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
+        web = BeautifulSoup(data,"lxml")
+
+        contributions_raw = web.find_all('h2',{'class': 'f4 text-normal mb-2'})
+
+        self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0].replace(",",""))
+
+        #Avatar
+        self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
 
 
-            counters = web.find_all('span',{'class':'counter'})
+        counters = web.find_all('span',{'class':'counter'})
 
-            #Number of repositories
-            self._numRepos = int(counters[0].text)
+        #Number of repositories
+        self._numRepos = int(counters[0].text)
 
-            #Followers
+        #Followers
+        if not 'k' in counters[2].text:
             self._followers = int(counters[2].text)
-
-            #Location
-            self._location = web.find("li", {"itemprop":"homeLocation"}).text
-
-            #Date of creation
-            join = dateutil.parser.parse(web.find("local-time",{"class":"join-date"})["datetime"])
-            self._join = join.strftime("%Y-%m-%d %H:%M:%S %Z")
-
-            #Bio
-            bio = web.find_all("div",{"class":"user-profile-bio"})
-            if len(bio)>0:
-                self._bio = bio[0].text
-            else:
-                self._bio=""
-
-            #Number of organizations
-            self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
-
-
         else:
-            self._contributions = 1000
-            self._avatar =""
-            self._followers = 1
-            self._join = "2013-06-24"
-            self._organizations = 1
-            self._numRepos = 1
-            self._location = "Barcelona"
-            self._bio ="Bio"
+            aux = counters[2].text.replace(" ","").replace("\n","").replace("k","")
+            self._followers = int(aux.split(".")[0])*1000 + int(aux.split(".")[1]) * 100
+
+        #Location
+        self._location = web.find("li", {"itemprop":"homeLocation"}).text
+
+        #Date of creation
+        join = dateutil.parser.parse(web.find("local-time",{"class":"join-date"})["datetime"])
+        self._join = join.strftime("%Y-%m-%d %H:%M:%S %Z")
+
+        #Bio
+        bio = web.find_all("div",{"class":"user-profile-bio"})
+        if len(bio)>0:
+            self._bio = bio[0].text.replace("\n","").replace("\t"," ").replace("\"","").replace("\'","")
+        else:
+            self._bio=""
+
+        #Number of organizations
+        self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
 
 
 
@@ -246,10 +241,10 @@ class GitHubUser:
             web = BeautifulSoup(data,"lxml")
 
 
-            ppcontributions = web.find_all('span',{'class':'m-0 text-gray'})
+            ppcontributions = web.find_all('span',{'class':'f4 lh-condensed m-0 text-gray'})
 
             for contrib in ppcontributions:
-                private+=int(contrib.text.lstrip().strip(" ")[0])
+                private+=int(contrib.text.lstrip().replace("\n"," ").partition(" ")[0])
 
 
             datefrom += relativedelta(months=1)
@@ -295,6 +290,8 @@ class GitHubUser:
                     break;
             except URLError as e:
                 time.sleep(3)
+            except Exception as e:
+                time.sleep(5)
 
         if code == 404:
                 raise Exception("User was not found")
