@@ -249,29 +249,27 @@ class GitHubUser:
 
 
             ppcontributions = web.find_all('span',{'class':'f4 lh-condensed m-0 text-gray'})
-            print(ppcontributions)
-            print(private)
-            print(url)
-            
+
             aux = web.find_all('span',{'class':'text-gray m-0'})
-            
+
             noContribs = False
-            
+
             for compr in aux:
                 if "had no activity during this period." in compr.text:
                     noContribs = True
-            
+
             if not noContribs:
                 for contrib in ppcontributions:
                     private+=int(contrib.text.lstrip().replace(",","").replace("\n"," ").partition(" ")[0])
-            print(private)
-
 
             datefrom += relativedelta(months=1)
             dateto += relativedelta(months=1)
 
         self._private = private
         self._public = self._contributions - private
+
+        if self._public < 0: #The GitHub contributions field does not show an exactly year
+            self._public = 0
 
 
 
