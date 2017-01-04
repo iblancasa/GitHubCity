@@ -69,8 +69,8 @@ class GitHubUser:
         self._join = ""
         self._avatar = ""
         self._bio = ""
-        self._public = -1
-        self._private = -1
+        self._public = 0
+        self._private = 0
 
     def export(self):
         """Export all attributes of the user to a dict
@@ -249,9 +249,22 @@ class GitHubUser:
 
 
             ppcontributions = web.find_all('span',{'class':'f4 lh-condensed m-0 text-gray'})
-
-            for contrib in ppcontributions:
-                private+=int(contrib.text.lstrip().replace(",","").replace("\n"," ").partition(" ")[0])
+            print(ppcontributions)
+            print(private)
+            print(url)
+            
+            aux = web.find_all('span',{'class':'text-gray m-0'})
+            
+            noContribs = False
+            
+            for compr in aux:
+                if "had no activity during this period." in compr.text:
+                    noContribs = True
+            
+            if not noContribs:
+                for contrib in ppcontributions:
+                    private+=int(contrib.text.lstrip().replace(",","").replace("\n"," ").partition(" ")[0])
+            print(private)
 
 
             datefrom += relativedelta(months=1)
