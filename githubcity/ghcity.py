@@ -271,7 +271,7 @@ class GitHubCity:
                 response = urllib.request.urlopen(req)
                 code = response.code
             except urllib.error.URLError as e:
-                if hasattr(e, "getheader") and e.getheader("X-RateLimit-Reset"):
+                if hasattr(e, "getheader"):
                     reset = int(e.getheader("X-RateLimit-Reset"))
                     utcAux = datetime.datetime.utcnow().utctimetuple()
                     now_sec = calendar.timegm(utcAux)
