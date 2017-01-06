@@ -175,7 +175,7 @@ class GitHubCity:
             self._urlLocations += "+location:\""\
              + str(urllib.parse.quote(l)) + "\""
 
-    def readConfig(self, config):
+    def readConfig(self, config, calculeToday=True):
         """Read config from a dict.
 
         Args:
@@ -197,10 +197,12 @@ class GitHubCity:
             self._excludedLocations.add(e)
 
         self._addLocationsToURL(self._locations)
-        last = datetime.datetime.strptime(self._lastDay, "%Y-%m-%d")
-        today = datetime.datetime.now().date()
 
-        self._validInterval(last, today)
+
+        if calculeToday:
+            last = datetime.datetime.strptime(self._lastDay, "%Y-%m-%d")
+            today = datetime.datetime.now().date()
+            self._validInterval(last, today)
 
     def readConfigFromJSON(self, fileName):
         """Read configuration from a file.
@@ -441,6 +443,7 @@ class GitHubCity:
 
     def calculateBestIntervals(self):
         """Calcule valid intervals of a city (with less than 1000 users)."""
+        self._intervals = []
         comprobation = self._readAPI(self._getURL())
         self._bigCity = True
 
