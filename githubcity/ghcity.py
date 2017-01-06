@@ -560,7 +560,7 @@ class GitHubCity:
                 userExported["comma"] = True
 
             position += 1
-        if limit != 0:
+        if limit == 0:
             exportedData["users"] = exportedUsers
         else:
             exportedData["users"] = exportedUsers[:limit]
