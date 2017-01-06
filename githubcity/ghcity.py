@@ -204,7 +204,7 @@ class GitHubCity:
             today = datetime.datetime.now().date()
             self._validInterval(last, today)
 
-    def readConfigFromJSON(self, fileName):
+    def readConfigFromJSON(self, fileName, calculeToday=True):
         """Read configuration from a file.
 
         Args:
@@ -212,7 +212,7 @@ class GitHubCity:
         """
         with open(fileName) as data_file:
             data = json.load(data_file)
-        self.readConfig(data)
+        self.readConfig(data, calculeToday)
 
     def _addUser(self, new_user):
         """Add new users to the list (private).
@@ -536,7 +536,7 @@ class GitHubCity:
         with open(fileName, "w") as outfile:
             json.dump(config, outfile, indent=4, sort_keys=True)
 
-    def export(self, template_file_name, output_file_name, sort, data = None):
+    def export(self, template_file_name, output_file_name, sort, data = None, limit = 0):
         """Export ranking to a file.
 
         Args:
@@ -560,8 +560,10 @@ class GitHubCity:
                 userExported["comma"] = True
 
             position += 1
-
-        exportedData["users"] = exportedUsers
+        if limit != 0:
+            exportedData["users"] = exportedUsers
+        else:
+            exportedData["users"] = exportedUsers[:limit]
         exportedData["extraData"] = data
 
         with open(template_file_name) as template_file:
