@@ -184,7 +184,6 @@ class GitHubUser:
         """
 
         url = self._server + self._name
-
         data = self._getDataFromURL(url)
 
         web = BeautifulSoup(data,"lxml")
@@ -220,8 +219,11 @@ class GitHubUser:
         self._location = web.find("li", {"itemprop":"homeLocation"}).text
 
         #Date of creation
-        join = dateutil.parser.parse(web.find("local-time",{"class":"join-date"})["datetime"])
-        self._join = join.strftime("%Y-%m-%d %H:%M:%S %Z")
+        join = web.findAll("a",{"class":"dropdown-item"})
+
+        for j in join:
+            if "Joined GitHub" in j.text:
+                self._join = j["href"][-10:]
 
         #Bio
         bio = web.find_all("div",{"class":"user-profile-bio"})
