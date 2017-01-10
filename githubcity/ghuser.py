@@ -179,6 +179,9 @@ class GitHubUser:
         """
         return self._private
 
+    def isASCII(self, s):
+        return all(ord(c) < 128 for c in s)
+
     def getData(self):
         """Get data of a GitHub user.
         """
@@ -227,7 +230,7 @@ class GitHubUser:
 
         #Bio
         bio = web.find_all("div",{"class":"user-profile-bio"})
-        if len(bio)>0:
+        if len(bio)>0 and isASCII(bio):
             self._bio = bio[0].text.replace("\n","").replace("\t"," ").replace("\"","").replace("\'","")
         else:
             self._bio=""
