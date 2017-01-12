@@ -1,4 +1,7 @@
 """
+
+Allow to get all data about a given GitHub City.
+
 This module allow to developers to get all users of GitHub that have a
 given city in their profile. For example, if I want getting all users
 from London,. I will get all users that have London in their
@@ -42,11 +45,8 @@ import calendar
 import queue
 import time
 import json
-import os
-import sys
 import logging
 import pystache
-from dateutil.relativedelta import relativedelta
 import coloredlogs
 from githubcity import ghuser
 GitHubUser = ghuser.GitHubUser
@@ -122,6 +122,7 @@ class GitHubCity:
         self._logger = logging.getLogger("GitHubCity")
         self._log = log
         self._fin = False
+        self._lastDay = False
         self._lockGetUser = threading.Lock()
         self._lockReadAddUser = threading.Lock()
         self._server = "https://api.github.com/"
@@ -198,7 +199,6 @@ class GitHubCity:
 
         self._addLocationsToURL(self._locations)
 
-
         if calculeToday:
             last = datetime.datetime.strptime(self._lastDay, "%Y-%m-%d")
             today = datetime.datetime.now().date()
@@ -263,10 +263,9 @@ class GitHubCity:
                 users that match with the search
         """
         code = 0
-        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) ' +
-               'libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
-               'Accept': 'application/vnd.github.v3.text-match+json'
-               }
+        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) \
+               libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
+               'Accept': 'application/vnd.github.v3.text-match+json'}
         while code != 200:
             req = urllib.request.Request(url, headers=hdr)
             try:
@@ -281,10 +280,8 @@ class GitHubCity:
                                          str(reset - now_sec)+" secs")
                     time.sleep(reset - now_sec)
                 code = 0
-            except URLError as e:
-                time.sleep(3)
             except Exception as e:
-                time.sleep(5)
+                time.sleep(10)
 
         data = json.loads(response.read().decode('utf-8'))
         response.close()
@@ -323,26 +320,27 @@ class GitHubCity:
         return url
 
     def _processUsers(self):
-            """Process users of the queue (get from the queue an add user) (private).
+        """Process users of the queue (private).
 
-            Note:
-                This method is private.
+        Note:
+            This method is private.
 
-            """
-            while(self._names.empty() and not self._fin):
-                pass
-            while not self._fin or not self._names.empty():
-                self._lockGetUser.acquire()
-                try:
-                    new_user = self._names.get(False)
-                except queue.Empty:
-                    self._lockGetUser.release()
-                    return
-                else:
-                    self._lockGetUser.release()
-                    self._addUser(new_user)
-                    self._logger.debug(str(self._names.qsize()) +
-                                       " users to  process")
+        """
+        while self._names.empty() and not self._fin:
+            pass
+        
+        while not self._fin or not self._names.empty():
+            self._lockGetUser.acquire()
+            try:
+                new_user = self._names.get(False)
+            except queue.Empty:
+                self._lockGetUser.release()
+                return
+            else:
+                self._lockGetUser.release()
+                self._addUser(new_user)
+                self._logger.debug(str(self._names.qsize()) +
+                                   " users to  process")
 
     def _launchThreads(self, numThreads):
         """Launch some threads and call to 'processUsers' (private).
@@ -398,7 +396,7 @@ class GitHubCity:
         self._threads = set()
 
         comprobationURL = self._getURL()
-        comprobationData = self._readAPI(comprobationURL)
+        self._readAPI(comprobationURL)
 
         self._launchThreads(20)
 
@@ -411,7 +409,7 @@ class GitHubCity:
             t.join()
 
     def _validInterval(self, start, finish):
-        """Given a valid interval, check if the interval is correct.
+        """Given an interval check if the interval is correct (private).
 
         An interval is correct if it has less than 1001 users.
         If the interval is correct, it will be added to '_intervals' attribute.
@@ -427,16 +425,15 @@ class GitHubCity:
             Valid periods are added to the private _intervals attribute.
 
         """
-        data = self._readAPI(self._getURL(1,
-                             start.strftime("%Y-%m-%d"),
-                             finish.strftime("%Y-%m-%d")))
+        data = self._readAPI(self._getURL(1, start.strftime("%Y-%m-%d"), finish.strftime("%Y-%m-%d")))
+
         if data["total_count"] >= 1000:
             middle = start + (finish - start)/2
             self._validInterval(start, middle)
             self._validInterval(middle, finish)
         else:
             self._intervals.append([start.strftime("%Y-%m-%d"),
-                                   finish.strftime("%Y-%m-%d")])
+                                    finish.strftime("%Y-%m-%d")])
             self._logger.debug("Valid interval: " +
                                start.strftime("%Y-%m-%d") + " to " +
                                finish.strftime("%Y-%m-%d"))
@@ -444,9 +441,7 @@ class GitHubCity:
     def calculateBestIntervals(self):
         """Calcule valid intervals of a city (with less than 1000 users)."""
         self._intervals = []
-        comprobation = self._readAPI(self._getURL())
-        self._bigCity = True
-
+        self._readAPI(self._getURL())
         today = datetime.datetime.now().date()
 
         self._validInterval(datetime.date(2008, 1, 1), today)
@@ -536,7 +531,8 @@ class GitHubCity:
         with open(fileName, "w") as outfile:
             json.dump(config, outfile, indent=4, sort_keys=True)
 
-    def export(self, template_file_name, output_file_name, sort, data = None, limit = 0):
+    def export(self, template_file_name, output_file_name, 
+        sort, data = None, limit = 0):
         """Export ranking to a file.
 
         Args:

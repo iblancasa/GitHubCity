@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""This module allow to developers to get all some data about a given GitHub user.
+"""
+Allow to get all data about a given GitHub user.
 
 Author: Israel Blancas @iblancasa
 Original idea: https://github.com/JJ/github-city-rankings
@@ -10,49 +8,54 @@ License:
 The MIT License (MIT)
     Copyright (c) 2015 Israel Blancas @iblancasa (http://iblancasa.com/)
 
-    Permission is hereby granted, free of charge, to any person obtaining a copy of this software
-    and associated documentation files (the “Software”), to deal in the Software without
-    restriction, including without limitation the rights to use, copy, modify, merge, publish,
-    distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom
+    Permission is hereby granted, free of charge, to any
+    person obtaining a copy of this software
+    and associated documentation files (the "Software"), to
+    deal in the Software without restriction, including without
+    limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the
+    Software, and to permit persons to whom
     the Software is furnished to do so, subject to the following conditions:
 
-    The above copyright notice and this permission notice shall be included in all copies or
-    substantial portions of the Software.
+    The above copyright notice and this permission notice shall
+    be included in all copies or substantial portions of the Software.
 
-    THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-    PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-    FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-    IN THE SOFTWARE.
+    THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+    FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+    ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+    OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+    OTHER DEALINGS IN THE SOFTWARE.
 
 """
 import time
-from bs4 import BeautifulSoup
 import urllib.request
 from urllib.error import HTTPError, URLError
-import datetime, dateutil.parser
+import datetime
 from dateutil.relativedelta import relativedelta
-import re
+from bs4 import BeautifulSoup
+
 
 class GitHubUser:
-    """Manager of a GitHub User
+    """Manager of a GitHub User.
 
     Attributes:
         _name (str): Name of the user (private).
-        _contributions (int): total contributions of an user in the last year (private).
-        _public (int): public contributions of an user in the last year (private).
-        _private (int): private contributions of an user in the last year (private).
+        _contributions (int): total contributions (web - last year) (private).
+        _public (int): public contributions in the last year (private).
+        _private (int): private contributions in the last year (private).
         _followers (int): total number of followers of an user (private).
         _numRepos (int): number of repositories of an user (private).
-        _organizations (int): number of public organizations where the user is (private).
-        _join (str): when the user joined to GitHub. Format: %Y-%M-%DT%H:%i:%sZ (private).
+        _organizations (int): number of public organizations (private).
+        _join (str): when the user joined. Format: %Y-%M-%D (private).
         _avatar (str): URL where the user's avatar is (private).
         _bio (str): bio of the user (private).
     """
-
     def __init__(self, name, server="https://github.com/"):
         """Constructor of the class.
+
         Args:
             name (str): name (login) of an user in GitHub
             server (str): server to query data. Default: https://github.com/
@@ -73,7 +76,8 @@ class GitHubUser:
         self._private = 0
 
     def export(self):
-        """Export all attributes of the user to a dict
+        """Export all attributes of the user to a dict.
+
         Returns:
             dict with all attributes of the user
         """
@@ -90,24 +94,24 @@ class GitHubUser:
         data["public"] = self.getPublicContributions()
         return data
 
-
     def getName(self):
-        """Get the name of the user
+        """Get the name of the user.
+
         Returns:
             str with the name of the user
         """
         return self._name
 
     def getContributions(self):
-        """Get the number of public contributions of the user
+        """Get the number of public contributions of the user.
+
         Returns:
             int with the number of public contributions of the user
         """
         return self._contributions
 
-
     def getAvatar(self):
-        """Get the URL where the avatar is
+        """Get the URL where the avatar is.
 
         Returns:
             str with an URL where the avatar is
@@ -115,7 +119,7 @@ class GitHubUser:
         return self._avatar
 
     def getFollowers(self):
-        """Get the number of followers of this user
+        """Get the number of followers of this user.
 
         Returns:
             int with the number of followers
@@ -123,7 +127,7 @@ class GitHubUser:
         return self._followers
 
     def getLocation(self):
-        """Get the location of the user
+        """Get the location of the user.
 
         Returns:
             str with location of the user
@@ -131,7 +135,7 @@ class GitHubUser:
         return self._location
 
     def getJoin(self):
-        """Get when an user joined to GitHub
+        """Get when an user joined to GitHub.
 
         Returns:
             a str with this time format %Y-%M-%DT%H:%i:%sZ
@@ -139,7 +143,7 @@ class GitHubUser:
         return self._join
 
     def getOrganizations(self):
-        """Get the number of public organizations where the user is
+        """Get the number of public organizations where the user is.
 
         Returns:
             int with the number of organizations
@@ -148,7 +152,7 @@ class GitHubUser:
         return self._organizations
 
     def getNumberOfRepositories(self):
-        """Get the number of repositories of this user
+        """Get the number of repositories of this user.
 
         Returns:
             int with the number of repositories
@@ -156,7 +160,7 @@ class GitHubUser:
         return self._numRepos
 
     def getBio(self):
-        """Get the bio of the user
+        """Get the bio of the user.
 
         Returns:
             str with the bio
@@ -164,7 +168,7 @@ class GitHubUser:
         return self._bio
 
     def getPublicContributions(self):
-        """Get only the public contributions of the user
+        """Get only the public contributions of the user.
 
         Returns:
             int with the number of public contributions
@@ -172,71 +176,69 @@ class GitHubUser:
         return self._public
 
     def getPrivateContributions(self):
-        """Get the number of private contributions of the user
+        """Get the number of private contributions of the user.
 
         Returns:
             int with the number of private contributions
         """
         return self._private
 
+    # pylint: disable=R0201
     def isASCII(self, s):
+        """Check if a string is ASCII."""
         return all(ord(c) < 128 for c in s)
 
     def getData(self):
-        """Get data of a GitHub user.
-        """
-
+        """Get data of a GitHub user."""
         url = self._server + self._name
         data = self._getDataFromURL(url)
 
-        web = BeautifulSoup(data,"lxml")
+        web = BeautifulSoup(data, "lxml")
 
-        contributions_raw = web.find_all('h2',{'class': 'f4 text-normal mb-2'})
+        contributions_raw = web.find_all('h2',
+                                         {'class': 'f4 text-normal mb-2'})
 
-        self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0].replace(",",""))
+        self._contributions = int(contributions_raw[0].text.lstrip().split(" ")[0].replace(",", ""))
 
-        #Avatar
-        self._avatar = web.find("img", {"class":"avatar"})['src'][:-10]
+        # Avatar
+        self._avatar = web.find("img", {"class": "avatar"})['src'][:-10]
 
+        counters = web.find_all('span', {'class': 'counter'})
 
-        counters = web.find_all('span',{'class':'counter'})
-
-        #Number of repositories
-        if not 'k' in counters[0].text:
+        # Number of repositories
+        if 'k' not in counters[0].text:
             self._numRepos = int(counters[0].text)
         else:
-            aux = counters[0].text.replace(" ","").replace("\n","").replace("k","")
-            self._numRepos = int(aux.split(".")[0])*1000 + int(aux.split(".")[1]) * 100
+            aux = counters[0].text.replace(" ", "").replace("\n", "").replace("k", "")
+            self._numRepos = int(aux.split(".")[0]) * 1000 + int(aux.split(".")[1]) * 100
 
-        #Followers
+        # Followers
         try:
-            if not 'k' in counters[2].text:
+            if 'k' not in counters[2].text:
                 self._followers = int(counters[2].text)
             else:
-                aux = counters[2].text.replace(" ","").replace("\n","").replace("k","")
+                aux = counters[2].text.replace(" ", "").replace("\n",  "").replace("k", "")
                 self._followers = int(aux.split(".")[0])*1000 + int(aux.split(".")[1]) * 100
-        except Exception:
-            print(self._name + " failed ------------------------")
-
-        #Location
-        self._location = web.find("li", {"itemprop":"homeLocation"}).text
+            
+        # Location
+        self._location = web.find("li", {"itemprop": "homeLocation"}).text
 
         #Date of creation
-        join = web.findAll("a",{"class":"dropdown-item"})
+        join = web.findAll("a", {"class": "dropdown-item"})
 
         for j in join:
             if "Joined GitHub" in j.text:
                 self._join = j["href"][-10:]
 
-        #Bio
-        bio = web.find_all("div",{"class":"user-profile-bio"})
-        if len(bio)>0 and self.isASCII(bio):
-            self._bio = bio[0].text.replace("\n","").replace("\t"," ").replace("\"","").replace("\'","")
+        # Bio
+        bio = web.find_all("div", {"class": "user-profile-bio"})
+        if len(bio) > 0 and self.isASCII(bio):
+            self._bio = bio[0].text.replace("\n", "").replace("\t", " ").replace("\"", "").replace("\'", "")
         else:
-            self._bio=""
+            self._bio = ""
 
-        #Number of organizations
-        self._organizations = len(web.find_all("a",{"class":"avatar-group-item"}))
+        # Number of organizations
+        self._organizations = len(web.find_all("a", {"class": "avatar-group-item"}))
 
 
 
@@ -248,14 +250,13 @@ class GitHubUser:
         while datefrom < datetime.datetime.now():
             fromstr = datefrom.strftime("%Y-%m-%d")
             tostr = dateto.strftime("%Y-%m-%d")
-            url = "https://github.com/"+self._name+"?tab=overview&from="+fromstr+"&to="+tostr
+            url = "https://github.com/" + self._name + "?tab=overview&from=" + fromstr + "&to=" + tostr
             data = self._getDataFromURL(url)
-            web = BeautifulSoup(data,"lxml")
+            web = BeautifulSoup(data, "lxml")
 
+            ppcontributions = web.find_all('span', {'class': 'f4 lh-condensed m-0 text-gray'})
 
-            ppcontributions = web.find_all('span',{'class':'f4 lh-condensed m-0 text-gray'})
-
-            aux = web.find_all('span',{'class':'text-gray m-0'})
+            aux = web.find_all('span', {'class': 'text-gray m-0'})
 
             noContribs = False
 
@@ -265,7 +266,7 @@ class GitHubUser:
 
             if not noContribs:
                 for contrib in ppcontributions:
-                    private+=int(contrib.text.lstrip().replace(",","").replace("\n"," ").partition(" ")[0])
+                    private += int(contrib.text.lstrip().replace(",","").replace("\n"," ").partition(" ")[0])
 
             datefrom += relativedelta(months=1)
             dateto += relativedelta(months=1)
@@ -273,11 +274,8 @@ class GitHubUser:
         self._private = private
         self._public = self._contributions - private
 
-        if self._public < 0: #The GitHub contributions field does not show an exactly year
+        if self._public < 0:  # Is not exact
             self._public = 0
-
-
-
 
     def _getDataFromURL(self, url):
         """Read HTML data from an user GitHub profile (private).
@@ -294,7 +292,8 @@ class GitHubUser:
         """
         code = 0
 
-        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
+        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) \
+        libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
                'Accept': 'text/html',
                'Pragma': 'no-cache',
                'Connection': 'keep-alive',
@@ -310,7 +309,7 @@ class GitHubUser:
             except HTTPError as e:
                 code = e.code
                 if code == 404:
-                    break;
+                    break
             except URLError as e:
                 time.sleep(3)
             except Exception as e:
