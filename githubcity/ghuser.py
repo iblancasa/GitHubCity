@@ -1,5 +1,5 @@
 """
-Allow to get all data about a given GitHub user.
+Allows to get all data about a given GitHub user.
 
 Author: Israel Blancas @iblancasa
 Original idea: https://github.com/JJ/github-city-rankings
@@ -30,7 +30,7 @@ The MIT License (MIT)
     OTHER DEALINGS IN THE SOFTWARE.
 
 """
-
+from __future__ import absolute_import
 import time
 import urllib.request
 from urllib.error import HTTPError, URLError

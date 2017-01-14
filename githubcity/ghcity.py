@@ -1,6 +1,6 @@
 """
 
-Allow to get all data about a given GitHub City.
+Allows to get all data about a given GitHub City.
 
 This module allow to developers to get all users of GitHub that have a
 given city in their profile. For example, if I want getting all users
@@ -37,6 +37,7 @@ The MIT License (MIT)
 
 """
 
+from __future__ import absolute_import
 import urllib.request
 import urllib.parse
 import threading
@@ -48,8 +49,7 @@ import json
 import logging
 import pystache
 import coloredlogs
-from githubcity import ghuser
-GitHubUser = ghuser.GitHubUser
+from githubcity.ghuser import GitHubUser
 
 
 class GitHubCity:
