@@ -328,7 +328,7 @@ class GitHubCity:
         """
         while self._names.empty() and not self._fin:
             pass
-        
+
         while not self._fin or not self._names.empty():
             self._lockGetUser.acquire()
             try:
@@ -425,7 +425,11 @@ class GitHubCity:
             Valid periods are added to the private _intervals attribute.
 
         """
-        data = self._readAPI(self._getURL(1, start.strftime("%Y-%m-%d"), finish.strftime("%Y-%m-%d")))
+        url = self._getURL(1,
+                           start.strftime("%Y-%m-%d"),
+                           finish.strftime("%Y-%m-%d"))
+
+        data = self._readAPI(url)
 
         if data["total_count"] >= 1000:
             middle = start + (finish - start)/2
@@ -531,8 +535,8 @@ class GitHubCity:
         with open(fileName, "w") as outfile:
             json.dump(config, outfile, indent=4, sort_keys=True)
 
-    def export(self, template_file_name, output_file_name, 
-        sort, data = None, limit = 0):
+    def export(self, template_file_name, output_file_name,
+               sort, data=None, limit=0):
         """Export ranking to a file.
 
         Args:
