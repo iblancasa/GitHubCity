@@ -242,13 +242,16 @@ class GitHubUser:
 
         # Bio
         bio = web.find_all("div", {"class": "user-profile-bio"})
-        if len(bio) > 0 and self.isASCII(bio):
-            bioText = bio[0].text.replace("\n", "")
-            bioText = bioText.replace("\t", " ").replace("\"", "")
-            bioText = bioText.replace("\'", "")
-            self._bio = bioText
-        else:
-            self._bio = ""
+        
+        if bio:
+            bio = bio[0].text
+            if len(bio) > 0 and self.isASCII(bio):
+                bioText = bio.replace("\n", "")
+                bioText = bioText.replace("\t", " ").replace("\"", "")
+                bioText = bioText.replace("\'", "")
+                self._bio = bioText
+            else:
+                self._bio = ""
 
         # Number of organizations
         orgsElements = web.find_all("a", {"class": "avatar-group-item"})
