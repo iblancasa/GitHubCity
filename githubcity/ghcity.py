@@ -86,7 +86,7 @@ class GitHubCity:
                  locations=None,
                  excludedUsers=None,
                  excludedLocations=None,
-                 log=True):
+                 level=5):
         """Constructor of the class.
 
         Note:
@@ -107,54 +107,67 @@ class GitHubCity:
             a new instance of GithubCity class
 
         """
+        self._logger = logging.getLogger("GitHubCity")
+        coloredlogs.install(level=level)
+
         if not githubID:
-            raise Exception("No GitHub ID inserted")
+            self._logger.exception("init: No GitHub ID inserted")
+            raise Exception("init: No GitHub ID inserted")
         self._githubID = githubID
 
         if not githubSecret:
-            raise Exception("No GitHub Secret inserted")
+            self._logger.exception("init: No GitHub Secret inserted")
+            raise Exception("init: No GitHub Secret inserted")
         self._githubSecret = githubSecret
 
         self._names = queue.Queue()
         self._myusers = set()
         self._dataUsers = []
         self._threads = set()
-        self._logger = logging.getLogger("GitHubCity")
-        self._log = log
         self._fin = False
         self._lastDay = False
         self._lockGetUser = threading.Lock()
         self._lockReadAddUser = threading.Lock()
         self._server = "https://api.github.com/"
+        self._logger.log(5, "init: Server to query: " + self._server)
 
         if config:
+            self._logger.log(4, "init: Reading from config")
             self.readConfig(config)
             self._addLocationsToURL(self._locations)
+            self._logger.log(5, "init: Locations: " + str(self._locations))
         else:
             self._city = city
-            self._locations = locations
+            self._logger.log(5, "init: City: " + str(self._city))
+            self._locations = []
+            self._logger.log(5, "init: Locations: " + str(self._locations))
             self._intervals = []
+            self._logger.log(5, "init: Intervals: " + str(self._intervals))
 
             if not self._locations:
                 self._locations = []
                 if self._city:
                     self._locations.append(self._city)
+                    self._logger.log(5, "init: City added to locations: " + str(self._locations))
 
             self._addLocationsToURL(self._locations)
 
             self._excluded = set()
+
             if excludedUsers:
                 for e in excludedUsers:
                     self._excluded.add(e)
+            self._logger.log(5, "init: Excluded users" + str(self._excluded))
 
             self._excludedLocations = set()
+
             if excludedLocations:
                 for e in excludedLocations:
                     self._excludedLocations.add(e)
+            self._logger.log(5, "init: Excluded locations: " + str(self._locations))
 
             self._userServer = "https://github.com/"
-        if log:
-            coloredlogs.install(level='DEBUG')
+            self._logger.log(5, "init: User server: " + self._userServer)
 
     def __tr__(self):
         """Str the class."""
@@ -182,10 +195,15 @@ class GitHubCity:
         Args:
             config: config to read (see cityconfigschema.json)
         """
+        self._logger.log(4, "readConfig: Reading configuration")
         self._city = config["name"]
+        self._logger.log(5, "readConfig: City name: " + self._city)
         self._intervals = config["intervals"]
+        self._logger.log(5, "readConfig: Intervals: " + str(self._intervals))
         self._lastDay = config["last_date"]
+        self._logger.log(5, "readConfig: Last day: " + self._lastDay)
         self._locations = config["locations"]
+        self._logger.log(5, "readConfig: Locations: " + str(self._locations))
         self._excluded = set()
         self._excludedLocations = set()
 
@@ -193,13 +211,18 @@ class GitHubCity:
         for e in excluded:
             self._excluded.add(e)
 
+        self._logger.log(5, "readConfig: Excluded users " + str(self._excluded))
+
         excluded = config["excludedLocations"]
         for e in excluded:
             self._excludedLocations.add(e)
 
+        self._logger.log(5, "readConfig: Excluded locations " + str(self._excludedLocations))
+
         self._addLocationsToURL(self._locations)
 
         if calculeToday:
+            self._logger.log(5, "readConfig: Add today")
             last = datetime.datetime.strptime(self._lastDay, "%Y-%m-%d")
             today = datetime.datetime.now().date()
             self._validInterval(last, today)
@@ -210,23 +233,30 @@ class GitHubCity:
         Args:
             fileName (str): name of a config file (see cityconfigschema.json)
         """
+        self._logger.log(4, "readConfigFromJSON: reading from " + file)
         with open(fileName) as data_file:
             data = json.load(data_file)
         self.readConfig(data, calculeToday)
 
     def getUsersFromFile(self, file):
+        """"""
+        self._logger.log(4, "getUsersFromFile: reading from " + file)
         with open(file, "r") as inputfile:
             data = json.load(inputfile)
 
+        self._logger.log(5, "getUsersFromFile: " + str(len(data)) + "users read")
         for user in data:
             self._names.put(user)
 
 
     def getUsersToFile(self, file):
+        self._logger.log(4, "getUsersToFile: writing to " + file)
         users = []
         if len(self._intervals) == 0:
+            self._logger.log(4, "getUsersToFile: Calculating best intervals")
             self.calculateBestIntervals()
 
+        self._logger.log(4, "getUsersToFile: Getting users from intervals")
         for i in self._intervals:
             users = self._getPeriodUsers(i[0], i[1])
 
@@ -248,6 +278,7 @@ class GitHubCity:
         self._lockReadAddUser.acquire()
         if new_user not in self._myusers and new_user not in self._excluded:
             self._lockReadAddUser.release()
+            self._logger.log(6, "_addUser: Adding " + new_user)
             self._myusers.add(new_user)
 
             myNewUser = GitHubUser(new_user)
@@ -257,8 +288,8 @@ class GitHubCity:
             userLoc = myNewUser.getLocation()
             if not any(s in userLoc for s in self._excludedLocations):
                 self._dataUsers.append(myNewUser)
-
         else:
+            self._logger.log(6, "_addUser: Excluding " + new_user)
             self._lockReadAddUser.release()
 
     def _readAPI(self, url):
@@ -288,6 +319,7 @@ class GitHubCity:
         while code != 200:
             req = urllib.request.Request(url, headers=hdr)
             try:
+                self._logger.log(6, "Getting " + url)
                 response = urllib.request.urlopen(req)
                 code = response.code
             except urllib.error.URLError as e:
@@ -295,11 +327,12 @@ class GitHubCity:
                     reset = int(e.getheader("X-RateLimit-Reset"))
                     utcAux = datetime.datetime.utcnow().utctimetuple()
                     now_sec = calendar.timegm(utcAux)
-                    self._logger.warning("Limit of API. Wait: " +
-                                         str(reset - now_sec)+" secs")
+                    self._logger.warning("_readAPI: Limit of API. Wait: " +
+                                         str(reset - now_sec) + " secs")
                     time.sleep(reset - now_sec)
                 code = 0
             except Exception as e:
+                self._logger.exception("_readAPI: waiting 10 secs")
                 time.sleep(10)
 
         data = json.loads(response.read().decode('utf-8'))
@@ -358,8 +391,8 @@ class GitHubCity:
             else:
                 self._lockGetUser.release()
                 self._addUser(new_user)
-                self._logger.debug(str(self._names.qsize()) +
-                                   " users to  process")
+                self._logger.info("_processUsers:" + str(self._names.qsize()) +
+                                  " users to  process")
 
     def _launchThreads(self, numThreads):
         """Launch some threads and call to 'processUsers' (private).
@@ -370,6 +403,7 @@ class GitHubCity:
         """
         i = 0
         while i < numThreads:
+            self._logger.log(6, "_launchThreads: Launching thread number " + str(i))
             i += 1
             newThr = threading.Thread(target=self._processUsers)
             newThr.setDaemon(True)
@@ -387,7 +421,7 @@ class GitHubCity:
             start_date (datetime.date): start date of the range to search users
             final_date (datetime.date): final date of the range to search users
         """
-        self._logger.info("Getting users from " + start_date +
+        self._logger.info("_getPeriodUsers: Getting users from " + start_date +
                           " to " + final_date)
 
         url = self._getURL(1, start_date, final_date)
@@ -400,6 +434,7 @@ class GitHubCity:
         while total_pages >= page:
             url = self._getURL(page, start_date, final_date)
             data = self._readAPI(url)
+            self._logger.log(5, "_getPeriodUsers: " + str(len(data['items'])) + " users found")
 
             for u in data['items']:
                 users.append(u["login"])
@@ -412,6 +447,7 @@ class GitHubCity:
     def getCityUsers(self):
         """Get all the users from the city."""
         if len(self._intervals) == 0:
+            self._logger.log(4, "getCityUsers: Calculating best intervals")
             self.calculateBestIntervals()
 
         self._fin = False
@@ -421,7 +457,7 @@ class GitHubCity:
         self._readAPI(comprobationURL)
 
         self._launchThreads(20)
-
+        self._logger.log(4, "getCityUsers: Launching threads")
         for i in self._intervals:
             self._getPeriodUsers(i[0], i[1])
 
@@ -429,6 +465,7 @@ class GitHubCity:
 
         for t in self._threads:
             t.join()
+        self._logger.log(4, "getCityUsers: Threads joined")
 
     def _validInterval(self, start, finish):
         """Given an interval check if the interval is correct (private).
@@ -460,7 +497,7 @@ class GitHubCity:
         else:
             self._intervals.append([start.strftime("%Y-%m-%d"),
                                     finish.strftime("%Y-%m-%d")])
-            self._logger.debug("Valid interval: " +
+            self._logger.info("_validInterval: New valid interval: " +
                                start.strftime("%Y-%m-%d") + " to " +
                                finish.strftime("%Y-%m-%d"))
 
@@ -471,8 +508,7 @@ class GitHubCity:
         today = datetime.datetime.now().date()
 
         self._validInterval(datetime.date(2008, 1, 1), today)
-        self._logger.info("Total number of intervals: " +
-                          str(len(self._intervals)))
+        self._logger.info("calculateBestIntervals: Total number of intervals: " + str(len(self._intervals)))
         self._lastDay = today.strftime("%Y-%m-%d")
 
     def getTotalUsers(self):
