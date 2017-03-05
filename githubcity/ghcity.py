@@ -214,6 +214,25 @@ class GitHubCity:
             data = json.load(data_file)
         self.readConfig(data, calculeToday)
 
+    def getUsersFromFile(self, file):
+        with open(file, "r") as inputfile:
+            data = json.load(inputfile)
+
+        for user in data:
+            self._names.put(user)
+
+
+    def getUsersToFile(self, file):
+        users = []
+        if len(self._intervals) == 0:
+            self.calculateBestIntervals()
+
+        for i in self._intervals:
+            users = self._getPeriodUsers(i[0], i[1])
+
+        with open(file, "w") as outfile:
+            json.dump(users, outfile)
+
     def _addUser(self, new_user):
         """Add new users to the list (private).
 
@@ -373,6 +392,7 @@ class GitHubCity:
 
         url = self._getURL(1, start_date, final_date)
         data = self._readAPI(url)
+        users = []
 
         total_pages = 10000
         page = 1
@@ -382,10 +402,12 @@ class GitHubCity:
             data = self._readAPI(url)
 
             for u in data['items']:
+                users.append(u["login"])
                 self._names.put(u["login"])
             total_count = data["total_count"]
             total_pages = int(total_count / 100) + 1
             page += 1
+        return users
 
     def getCityUsers(self):
         """Get all the users from the city."""
