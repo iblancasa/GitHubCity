@@ -198,64 +198,67 @@ class GitHubUser:
 
         web = BeautifulSoup(data, "lxml")
 
-        contributions_raw = web.find_all('h2',
-                                         {'class': 'f4 text-normal mb-2'})
+        try:
+            contributions_raw = web.find_all('h2',
+                                             {'class': 'f4 text-normal mb-2'})
 
-        contrText = contributions_raw[0].text
-        contrText = contrText.lstrip().split(" ")[0]
-        contrText = contrText.replace(",", "")
-        self._contributions = int(contrText)
+            contrText = contributions_raw[0].text
+            contrText = contrText.lstrip().split(" ")[0]
+            contrText = contrText.replace(",", "")
+            self._contributions = int(contrText)
 
-        # Avatar
-        self._avatar = web.find("img", {"class": "avatar"})['src'][:-10]
+            # Avatar
+            self._avatar = web.find("img", {"class": "avatar"})['src'][:-10]
 
-        counters = web.find_all('span', {'class': 'counter'})
+            counters = web.find_all('span', {'class': 'counter'})
 
-        # Number of repositories
-        if 'k' not in counters[0].text:
-            self._numRepos = int(counters[0].text)
-        else:
-            reposText = counters[0].text.replace(" ", "")
-            reposText = reposText.replace("\n", "").replace("k", "")
-
-            self._numRepos = int(reposText.split(".")[0]) * 1000 + \
-                int(reposText.split(".")[1]) * 100
-
-        # Followers
-        if 'k' not in counters[2].text:
-            self._followers = int(counters[2].text)
-        else:
-            follText = counters[2].text.replace(" ", "")
-            follText = follText.replace("\n", "").replace("k", "")
-            self._followers = int(follText.split(".")[0])*1000 + \
-                int(follText.split(".")[1]) * 100
-
-        # Location
-        self._location = web.find("li", {"itemprop": "homeLocation"}).text
-
-        # Date of creation
-        join = web.findAll("a", {"class": "dropdown-item"})
-
-        for j in join:
-            if "Joined GitHub" in j.text:
-                self._join = j["href"][-10:]
-
-        # Bio
-        bio = web.find_all("div", {"class": "user-profile-bio"})
-        
-        if bio:
-            bio = bio[0].text
-            if len(bio) > 0 and self.isASCII(bio):
-                bioText = bio.replace("\n", "")
-                bioText = bioText.replace("\t", " ").replace("\"", "")
-                bioText = bioText.replace("\'", "")
-                self._bio = bioText
+            # Number of repositories
+            if 'k' not in counters[0].text:
+                self._numRepos = int(counters[0].text)
             else:
-                self._bio = ""
+                reposText = counters[0].text.replace(" ", "")
+                reposText = reposText.replace("\n", "").replace("k", "")
 
-        # Number of organizations
-        orgsElements = web.find_all("a", {"class": "avatar-group-item"})
-        self._organizations = len(orgsElements)
+                self._numRepos = int(reposText.split(".")[0]) * 1000 + \
+                    int(reposText.split(".")[1]) * 100
+
+            # Followers
+            if 'k' not in counters[2].text:
+                self._followers = int(counters[2].text)
+            else:
+                follText = counters[2].text.replace(" ", "")
+                follText = follText.replace("\n", "").replace("k", "")
+                self._followers = int(follText.split(".")[0])*1000 + \
+                    int(follText.split(".")[1]) * 100
+
+            # Location
+            self._location = web.find("li", {"itemprop": "homeLocation"}).text
+
+            # Date of creation
+            join = web.findAll("a", {"class": "dropdown-item"})
+
+            for j in join:
+                if "Joined GitHub" in j.text:
+                    self._join = j["href"][-10:]
+
+            # Bio
+            bio = web.find_all("div", {"class": "user-profile-bio"})
+
+            if bio:
+                bio = bio[0].text
+                if len(bio) > 0 and self.isASCII(bio):
+                    bioText = bio.replace("\n", "")
+                    bioText = bioText.replace("\t", " ").replace("\"", "")
+                    bioText = bioText.replace("\'", "")
+                    self._bio = bioText
+                else:
+                    self._bio = ""
+
+            # Number of organizations
+            orgsElements = web.find_all("a", {"class": "avatar-group-item"})
+            self._organizations = len(orgsElements)
+        except Exception as e:
+            print("Error with " + self._name + ": " + str(e))
 
     # pylint: disable=R0914
     def getRealContributions(self):
