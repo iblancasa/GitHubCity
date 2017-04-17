@@ -4,18 +4,23 @@
 [![GitHub license](https://img.shields.io/github/license/iblancasa/GitHubCity.svg)](https://github.com/iblancasa/GitHubCity)[![Coverage Status](https://coveralls.io/repos/iblancasa/GitHubCity/badge.svg?branch=master&service=github)](https://coveralls.io/github/iblancasa/GitHubCity?branch=master)
 
 ## What is this?
-This is a small library which gets all GitHub users given a city. Original idea is [Top-GitHub-Users-Data](https://github.com/JJ/top-github-users-data) by [@JJ](https://github.com/JJ), an adaptation of [top-github-users](https://github.com/paulmillr/top-github-users) from [@paulmillr](https://github.com/paulmillr/).
+
+This is a small library which downloads all GitHub users given a city. Original idea is [Top-GitHub-Users-Data](https://github.com/JJ/top-github-users-data) by [@JJ](https://github.com/JJ), an adaptation of [top-github-users](https://github.com/paulmillr/top-github-users) from [@paulmillr](https://github.com/paulmillr/).
 
 ## What I can do with this?
-Now, you only can get all user names from a city (with a city in the location field). In future, this will be an amazing library.
+
+For the time being you can only get all usernames for a city (with a
+city in the location field). In the future, this will be an amazing library.
 
 ## What I need to run this?
+
 You will need to install Python 3. Python 2 is not supported. I recommend you [install Anaconda](https://www.continuum.io/).
 
-In addition, you will need to get ID and Secret from a GitHub application. [You can register your own application here!](https://github.com/settings/applications/new).
+In addition, you will need to get an ID and Secret from GitHub. [You can register your own application here!](https://github.com/settings/applications/new).
 
 #### Dependences
-You have a ``requeriments.txt`` file. Install all dependences with ``pip install -r requeriments.txt``.
+
+There is a ``requirements.txt`` file. Install all dependences with ``pip install -r requirements.txt``.
 
 
 ## Getting started
@@ -30,6 +35,7 @@ city.getCityUsers()
 ```
 
 #### Excluding users
+
 You can generate a JSON file like this (each element is an user and this properties are name -login name of the user- and reason -why this user has been banned-):
 ```json
 [
@@ -48,7 +54,8 @@ You can generate a JSON file like this (each element is an user and this propert
 ]
 ```
 
-When you read this file and parse it to JSON, you can add it to the class in constructor:
+When you read this file and parse it to JSON, you can add it to the
+class in the constructor:
 ```python
 GitHubCity(nameCity,GitHubID,GitHubSecret, jsonData)
 ```
