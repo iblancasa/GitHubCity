@@ -150,6 +150,99 @@ class GitHubCity:
             self.__urlLocations += "+location:\""\
              + str(urllib.parse.quote(l)) + "\""
 
+    def __processUsers(self):
+        """Process users of the queue."""
+        while self.__names.empty() and not self.__fin:
+            pass
+
+        while not self.__fin or not self.__names.empty():
+            self.__lockGetUser.acquire()
+            try:
+                new_user = self.__names.get(False)
+            except queue.Empty:
+                self.__lockGetUser.release()
+                return
+            else:
+                self.__lockGetUser.release()
+                self.__addUser(new_user)
+                self.__logger.info("_processUsers:" +
+                                   str(self.__names.qsize()) +
+                                   " users to  process")
+
+    def _addUser(self, new_user):
+        """Add new users to the list.
+
+        :param new_user: name of a GitHub user to include in
+            the ranking
+        :type new_user: str.
+        """
+        self._lockReadAddUser.acquire()
+        if new_user not in self._myusers and \
+                new_user not in self._excluded:
+            self._lockReadAddUser.release()
+            self._logger.log(6, "_addUser: Adding " + new_user)
+            self._myusers.add(new_user)
+
+            myNewUser = GitHubUser(new_user)
+            myNewUser.getData()
+            myNewUser.getRealContributions()
+
+            userLoc = myNewUser.getLocation()
+            if not any(s in userLoc for s in self._excludedLocations):
+                self._dataUsers.append(myNewUser)
+        else:
+            self._logger.log(6, "_addUser: Excluding " + new_user)
+            self._lockReadAddUser.release()
+
+    def __launchThreads(self, numThreads):
+        """Launch some threads and start to process users.
+
+        :param numThreads: number of thrads to launch.
+        :type numThreads: int.
+        """
+        i = 0
+        while i < numThreads:
+            self.__logger.debug("Launching thread number " +
+                                str(i))
+            i += 1
+            newThr = threading.Thread(target=self.__processUsers)
+            newThr.setDaemon(True)
+            self.__threads.add(newThr)
+            newThr.start()
+
+    def __getPeriodUsers(self, start_date, final_date):
+        """Get all the users given a period.
+
+        :param start_date: start date of the range to search
+            users
+        :type start_date: time.date.
+        :param final_date: final date of the range to search
+            users
+        :type final_date: time.date.
+        """
+        self.__logger.info("Getting users from " + start_date +
+                           " to " + final_date)
+
+        url = self.__getURL(1, start_date, final_date)
+        data = self.__readAPI(url)
+        users = []
+
+        total_pages = 10000
+        page = 1
+
+        while total_pages >= page:
+            url = self.__getURL(page, start_date, final_date)
+            data = self.__readAPI(url)
+            self.__logger.debug(str(len(data['items'])) +
+                                " users found")
+            for u in data['items']:
+                users.append(u["login"])
+                self.__names.put(u["login"])
+            total_count = data["total_count"]
+            total_pages = int(total_count / 100) + 1
+            page += 1
+        return users
+
     def getCityUsers(self, numberOfThreads=20):
         """Get all the users from the city.
 
@@ -157,7 +250,7 @@ class GitHubCity:
         :type numberOfThreads: int.
         """
         if not self.__intervals:
-            self.___logger.debug("Calculating best intervals")
+            self.__logger.debug("Calculating best intervals")
             self.calculateBestIntervals()
 
         self.__fin = False
@@ -168,8 +261,8 @@ class GitHubCity:
 
         self.__launchThreads(numberOfThreads)
         self.__logger.debug("Launching threads")
-        for i in self._intervals:
-            self._getPeriodUsers(i[0], i[1])
+        for i in self.__intervals:
+            self.__getPeriodUsers(i[0], i[1])
 
         self.__fin = True
 
@@ -196,7 +289,7 @@ class GitHubCity:
                 self.__githubID + "&client_secret=" + \
                 self.__githubSecret + \
                 "&order=desc&q=sort:joined+type:user" + \
-                self._urlLocations + \
+                self.__urlLocations + \
                 "&sort=joined&order=asc&per_page=100&page=" + \
                 str(page)
         else:
@@ -232,7 +325,7 @@ class GitHubCity:
         while code != 200:
             req = urllib.request.Request(url, headers=hdr)
             try:
-                self.__logger.log(6, "Getting " + url)
+                self.__logger.debug("Getting " + url)
                 response = urllib.request.urlopen(req)
                 code = response.code
             except urllib.error.URLError as e:
