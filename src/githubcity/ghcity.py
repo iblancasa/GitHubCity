@@ -96,6 +96,9 @@ class GitHubCity:
         self.__lockReadAddUser = threading.Lock()
         self.__server = "https://api.github.com/"
         self.__intervals = []
+        self.__excluded = []
+        self.__excludedLocations = []
+
         if configuration:
             self.readConfig(configuration)
             self.__logger.debug("Configuration set")
@@ -114,31 +117,38 @@ class GitHubCity:
         self.__logger.debug("Reading configuration")
         self.__city = configuration["name"]
         self.__logger.info("City name: " + self.__city)
-        self.__intervals = configuration["intervals"]
-        self.__logger.debug("Intervals: " +
-                            str(self.__intervals))
-        self.__lastDay = configuration["last_date"]
-        self.__logger.debug("Last day: " + self.__lastDay)
-        self.__locations = configuration["locations"]
-        self.__logger.debug("Locations: " +
-                            str(self.__locations))
-        self.__excluded = set()
-        self.__excludedLocations = set()
+        if "intervals" in configuration:
+            self.__intervals = configuration["intervals"]
+            self.__logger.debug("Intervals: " +
+                                str(self.__intervals))
 
-        excluded = configuration["excludedUsers"]
-        for e in excluded:
-            self.__excluded.add(e)
-        self.__logger.debug("Excluded users " +
-                            str(self.__excluded))
+        if "last_date" in configuration:
+            self.__lastDay = configuration["last_date"]
+            self.__logger.debug("Last day: " + self.__lastDay)\
 
-        excluded = configuration["excludedLocations"]
-        for e in excluded:
-            self.__excludedLocations.add(e)
+        if "locations" in configuration:
+            self.__locations = configuration["locations"]
+            self.__logger.debug("Locations: " +
+                                str(self.__locations))
+            self.__addLocationsToURL(self.__locations)
 
-        self.__logger.debug("Excluded locations " +
-                            str(self.__excludedLocations))
+        if "excludedUsers" in configuration:
+            self.__excluded = set()
+            self.__excludedLocations = set()
 
-        self.__addLocationsToURL(self.__locations)
+            excluded = configuration["excludedUsers"]
+            for e in excluded:
+                self.__excluded.add(e)
+            self.__logger.debug("Excluded users " +
+                                str(self.__excluded))
+
+        if "excludedLocations" in configuration:
+            excluded = configuration["excludedLocations"]
+            for e in excluded:
+                self.__excludedLocations.add(e)
+
+            self.__logger.debug("Excluded locations " +
+                                str(self.__excludedLocations))
 
     def readConfigFromJSON(self, fileName):
         """Read configuration from JSON.
@@ -262,7 +272,7 @@ class GitHubCity:
     def calculateBestIntervals(self):
         """Calcule valid intervals of a city."""
         self.__intervals = []
-        self.__readAPI(self._getURL())
+        self.__readAPI(self.__getURL())
         today = datetime.datetime.now().date()
 
         self.__validInterval(datetime.date(2008, 1, 1), today)
@@ -302,6 +312,101 @@ class GitHubCity:
                                " to " +
                                finish.strftime("%Y-%m-%d"))
     # End calcule and set intervals-------------------------------------------
+
+    # Import/export users ----------------------------------------------------
+    def export(self, template_file_name, output_file_name,
+               sort="public", data=None, limit=0):
+        """Export ranking to a file.
+
+        Args:
+            template_file_name (str): where is the template
+                (moustache template)
+            output_file_name (str): where create the file with the ranking
+            sort (str): field to sort the users
+        """
+        exportedData = {}
+        exportedUsers = self.__exportUsers(sort)
+
+        if limit == 0:
+            exportedData["users"] = exportedUsers
+        else:
+            exportedData["users"] = exportedUsers[:limit]
+        exportedData["extraData"] = data
+
+        with open(template_file_name) as template_file:
+            template_raw = template_file.read()
+
+        template = pystache.parse(template_raw)
+        renderer = pystache.Renderer()
+
+        output = renderer.render(template, exportedData)
+
+        with open(output_file_name, "w") as text_file:
+            text_file.write(output)
+
+    def getSortedUsers(self, order="public"):
+        """Return a list with sorted users.
+
+        :param order: the field to sort the users.
+            - contributions (total number of contributions)
+            - public (public contributions)
+            - private (private contributions)
+            - name
+            - followers
+            - join
+            - organizations
+            - repositories
+        :type order: str.
+        :return: a list of the github users sorted by the selected field.
+        :rtype: str.
+        """
+        if order == "contributions":
+            self.__dataUsers.sort(key=lambda u: u.contributions,
+                                  reverse=True)
+        elif order == "public":
+            self.__dataUsers.sort(key=lambda u: u.public,
+                                  reverse=True)
+        elif order == "private":
+            self.__dataUsers.sort(key=lambda u: u.private,
+                                  reverse=True)
+        elif order == "name":
+            self.__dataUsers.sort(key=lambda u: u.name, reverse=True)
+        elif order == "followers":
+            self.__dataUsers.sort(key=lambda u: u.followers, reverse=True)
+        elif order == "join":
+            self.__dataUsers.sort(key=lambda u: u.join, reverse=True)
+        elif order == "organizations":
+            self.__dataUsers.sort(key=lambda u: u.organizations,
+                                  reverse=True)
+        elif order == "repositories":
+            self.__dataUsers.sort(key=lambda u: u.repositories,
+                                  reverse=True)
+        return self.__dataUsers
+
+    def __exportUsers(self, sort):
+        """Export the users to a dictionary.
+
+        :param sort: field to sort the users
+        :type sort: str.
+        :return: exported users.
+        :rtype: dict.
+        """
+        position = 1
+        dataUsers = self.getSortedUsers(sort)
+        exportedUsers = []
+
+        for u in dataUsers:
+            userExported = u.export()
+            userExported["position"] = position
+            exportedUsers.append(userExported)
+
+            if position < len(dataUsers):
+                userExported["comma"] = True
+
+            position += 1
+        return exportedUsers
+
+    # End import/export users ------------------------------------------------
 
     # Utilities --------------------------------------------------------------
     def calculeToday(self):
