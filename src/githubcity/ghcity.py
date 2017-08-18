@@ -52,7 +52,8 @@ from githubcity.ghuser import GitHubUser
 class GitHubCity:
     """Manager of a GithubCity."""
 
-    def __init__(self, githubID, githubSecret, configuration, verbosity=0):
+    def __init__(self, githubID, githubSecret, configuration=False,
+                 verbosity=0):
         """Constructor of the class.
 
         Constructor of the class GitHubCity.
@@ -61,7 +62,7 @@ class GitHubCity:
         :type githubID: str.
         :param githubSecret: your GitHub Secret.
         :type githubSecret: str.
-        :param configuration: configuration of the class
+        :param configuration: configuration of the class.
         :type configuration: dict.
 
         Note
@@ -95,8 +96,13 @@ class GitHubCity:
         self.__lockReadAddUser = threading.Lock()
         self.__server = "https://api.github.com/"
         self.__intervals = []
-        self.readConfig(configuration)
+        if configuration:
+            self.readConfig(configuration)
+            self.__logger.debug("Configuration set")
+        else:
+            self.__logger.warning("Not configuration set")
 
+    # Read configurations ----------------------------------------------------
     def readConfig(self, configuration):
         """Read configuration from dict.
 
@@ -134,23 +140,19 @@ class GitHubCity:
 
         self.__addLocationsToURL(self.__locations)
 
-    def calculeToday(self):
-        """Calcule the intervals from the last date."""
-        self.__logger.debug("Add today")
-        last = datetime.datetime.strptime(self.__lastDay, "%Y-%m-%d")
-        today = datetime.datetime.now().date()
-        self.__validInterval(last, today)
+    def readConfigFromJSON(self, fileName):
+        """Read configuration from JSON.
 
-    def __addLocationsToURL(self, locations):
-        """Format all locations to GitHub's URL API.
-
-        :param locations: locations where to search users.
-        :type locations: list(str).
+        :param fileName: path to the configuration file.
+        :type fileName: str.
         """
-        for l in self.__locations:
-            self.__urlLocations += "+location:\""\
-             + str(urllib.parse.quote(l)) + "\""
+        self.__logger.debug("readConfigFromJSON: reading from " + fileName)
+        with open(fileName) as data_file:
+            data = json.load(data_file)
+        self.readConfig(data)
+    # En read configurations --------------------------------------------------
 
+    # Get and process users ---------------------------------------------------
     def __processUsers(self):
         """Process users of the queue."""
         while self.__names.empty() and not self.__fin:
@@ -194,22 +196,6 @@ class GitHubCity:
         else:
             self.__logger.debug("__addUser: Excluding " + new_user)
             self.__lockReadAddUser.release()
-
-    def __launchThreads(self, numThreads):
-        """Launch some threads and start to process users.
-
-        :param numThreads: number of thrads to launch.
-        :type numThreads: int.
-        """
-        i = 0
-        while i < numThreads:
-            self.__logger.debug("Launching thread number " +
-                                str(i))
-            i += 1
-            newThr = threading.Thread(target=self.__processUsers)
-            newThr.setDaemon(True)
-            self.__threads.add(newThr)
-            newThr.start()
 
     def __getPeriodUsers(self, start_date, final_date):
         """Get all the users given a period.
@@ -270,39 +256,86 @@ class GitHubCity:
         for t in self.__threads:
             t.join()
         self.__logger.debug("Threads joined")
+    # End of get and process users --------------------------------------------
 
-    def __getURL(self, page=1, start_date=None,
-                 final_date=None, order="asc"):
-        """Get the API's URL to query to get data about users.
+    # Calcule and set intervals----------------------------------------------
+    def calculateBestIntervals(self):
+        """Calcule valid intervals of a city."""
+        self.__intervals = []
+        self.__readAPI(self._getURL())
+        today = datetime.datetime.now().date()
 
-        :param page: number of the page.
-        :param start_date: start date of the range to search
-            users (Y-m-d).
-        "param final_date: final date of the range to search
-            users (Y-m-d).
-        :param order: order of the query. Valid values are
-            'asc' or 'desc'. Default: asc
-        :return: formatted URL.
-        :rtype: str.
+        self.__validInterval(datetime.date(2008, 1, 1), today)
+        self.__logger.info("Total number of intervals: " +
+                           str(len(self.__intervals)))
+        self.__lastDay = today.strftime("%Y-%m-%d")
+
+    def __validInterval(self, start, finish):
+        """Check if the interval is correct.
+
+        An interval is correct if it has less than 1001
+        users. If the interval is correct, it will be added
+        to '_intervals' attribute. Else, interval will be
+        split in two news intervals and these intervals
+        will be checked.
+
+        :param start: start date of the interval.
+        :type start: datetime.date.
+        :param finish: finish date of the interval.
+        :type finish: datetime.date.
         """
-        if not start_date or not final_date:
-            url = self.__server + "search/users?client_id=" + \
-                self.__githubID + "&client_secret=" + \
-                self.__githubSecret + \
-                "&order=desc&q=sort:joined+type:user" + \
-                self.__urlLocations + \
-                "&sort=joined&order=asc&per_page=100&page=" + \
-                str(page)
+        url = self.__getURL(1,
+                            start.strftime("%Y-%m-%d"),
+                            finish.strftime("%Y-%m-%d"))
+
+        data = self.__readAPI(url)
+
+        if data["total_count"] >= 1000:
+            middle = start + (finish - start)/2
+            self.__validInterval(start, middle)
+            self.__validInterval(middle, finish)
         else:
-            url = self.__server + "search/users?client_id=" + \
-                self.__githubID + "&client_secret=" + \
-                self.__githubSecret + \
-                "&order=desc&q=sort:joined+type:user" + \
-                self.__urlLocations + "+created:" + \
-                start_date + ".." + final_date + \
-                "&sort=joined&order=" + order + \
-                "&per_page=100&page=" + str(page)
-        return url
+            self.__intervals.append([start.strftime("%Y-%m-%d"),
+                                     finish.strftime("%Y-%m-%d")])
+            self.__logger.info("New valid interval: " +
+                               start.strftime("%Y-%m-%d") +
+                               " to " +
+                               finish.strftime("%Y-%m-%d"))
+    # End calcule and set intervals-------------------------------------------
+
+    # Utilities --------------------------------------------------------------
+    def calculeToday(self):
+        """Calcule the intervals from the last date."""
+        self.__logger.debug("Add today")
+        last = datetime.datetime.strptime(self.__lastDay, "%Y-%m-%d")
+        today = datetime.datetime.now().date()
+        self.__validInterval(last, today)
+
+    def __addLocationsToURL(self, locations):
+        """Format all locations to GitHub's URL API.
+
+        :param locations: locations where to search users.
+        :type locations: list(str).
+        """
+        for l in self.__locations:
+            self.__urlLocations += "+location:\""\
+             + str(urllib.parse.quote(l)) + "\""
+
+    def __launchThreads(self, numThreads):
+        """Launch some threads and start to process users.
+
+        :param numThreads: number of thrads to launch.
+        :type numThreads: int.
+        """
+        i = 0
+        while i < numThreads:
+            self.__logger.debug("Launching thread number " +
+                                str(i))
+            i += 1
+            newThr = threading.Thread(target=self.__processUsers)
+            newThr.setDaemon(True)
+            self.__threads.add(newThr)
+            newThr.start()
 
     def __readAPI(self, url):
         """Read a petition to the GitHub API (private).
@@ -351,56 +384,36 @@ class GitHubCity:
         response.close()
         return data
 
-    def __validInterval(self, start, finish):
-        """Check if the interval is correct.
+    def __getURL(self, page=1, start_date=None,
+                 final_date=None, order="asc"):
+        """Get the API's URL to query to get data about users.
 
-        An interval is correct if it has less than 1001
-        users. If the interval is correct, it will be added
-        to '_intervals' attribute. Else, interval will be
-        split in two news intervals and these intervals
-        will be checked.
-
-        :param start: start date of the interval.
-        :type start: datetime.date.
-        :param finish: finish date of the interval.
-        :type finish: datetime.date.
+        :param page: number of the page.
+        :param start_date: start date of the range to search
+            users (Y-m-d).
+        "param final_date: final date of the range to search
+            users (Y-m-d).
+        :param order: order of the query. Valid values are
+            'asc' or 'desc'. Default: asc
+        :return: formatted URL.
+        :rtype: str.
         """
-        url = self.__getURL(1,
-                            start.strftime("%Y-%m-%d"),
-                            finish.strftime("%Y-%m-%d"))
-
-        data = self.__readAPI(url)
-
-        if data["total_count"] >= 1000:
-            middle = start + (finish - start)/2
-            self.__validInterval(start, middle)
-            self.__validInterval(middle, finish)
+        if not start_date or not final_date:
+            url = self.__server + "search/users?client_id=" + \
+                self.__githubID + "&client_secret=" + \
+                self.__githubSecret + \
+                "&order=desc&q=sort:joined+type:user" + \
+                self.__urlLocations + \
+                "&sort=joined&order=asc&per_page=100&page=" + \
+                str(page)
         else:
-            self.__intervals.append([start.strftime("%Y-%m-%d"),
-                                     finish.strftime("%Y-%m-%d")])
-            self.__logger.info("New valid interval: " +
-                               start.strftime("%Y-%m-%d") +
-                               " to " +
-                               finish.strftime("%Y-%m-%d"))
-
-    def calculateBestIntervals(self):
-        """Calcule valid intervals of a city."""
-        self.__intervals = []
-        self.__readAPI(self._getURL())
-        today = datetime.datetime.now().date()
-
-        self.__validInterval(datetime.date(2008, 1, 1), today)
-        self.__logger.info("Total number of intervals: " +
-                           str(len(self.__intervals)))
-        self.__lastDay = today.strftime("%Y-%m-%d")
-
-    def readConfigFromJSON(self, fileName):
-        """Read configuration from JSON.
-
-        :param fileName: path to the configuration file.
-        :type fileName: str.
-        """
-        self.__logger.debug("readConfigFromJSON: reading from " + fileName)
-        with open(fileName) as data_file:
-            data = json.load(data_file)
-        self.readConfig(data)
+            url = self.__server + "search/users?client_id=" + \
+                self.__githubID + "&client_secret=" + \
+                self.__githubSecret + \
+                "&order=desc&q=sort:joined+type:user" + \
+                self.__urlLocations + "+created:" + \
+                start_date + ".." + final_date + \
+                "&sort=joined&order=" + order + \
+                "&per_page=100&page=" + str(page)
+        return url
+    # Endf utilities ----------------------------------------------------------
