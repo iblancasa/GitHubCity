@@ -87,6 +87,7 @@ class GitHubCity:
 
         self.__names = queue.Queue()
         self.__urlLocations = ""
+        self.__urlFilters = ""
         self.__myusers = set()
         self.__dataUsers = []
         self.__threads = set()
@@ -160,9 +161,57 @@ class GitHubCity:
         with open(fileName) as data_file:
             data = json.load(data_file)
         self.readConfig(data)
+
+    def configToJson(self, fileName):
+        """Save the configuration of the city in a JSON.
+
+        :param fileName: path to the output file.
+        :type fileName: str.
+        """
+        config = self.getConfig()
+        with open(fileName, "w") as outfile:
+            json.dump(config, outfile, indent=4, sort_keys=True)
+
+    def getConfig(self):
+        """Return the configuration of the city.
+
+        :return: configuration of the city.
+        :rtype: dict.
+        """
+        config = {}
+        config["name"] = self.__city
+        config["intervals"] = self.__intervals
+        config["last_date"] = self.__lastDay
+        config["excludedUsers"] = []
+        config["excludedLocations"] = []
+
+        for e in self.__excluded:
+            config["excludedUsers"].append(e)
+
+        for e in self.__excludedLocations:
+            config["excludedLocations"].append(e)
+
+        config["locations"] = self.__locations
+        return config
     # En read configurations --------------------------------------------------
 
     # Get and process users ---------------------------------------------------
+    def addFilter(self, field, value):
+        """Add a filter to the seach.
+
+        :param field: what field filter (see GitHub search).
+        :type field: str.
+        :param value: value of the filter (see GitHub search).
+        :type value: str.
+        """
+        if "<" not in value or ">" not in value or ".." not in value:
+            value = ":" + value
+
+        if self.__urlFilters:
+            self.__urlFilters += "+" + field + str(urllib.parse.quote(value))
+        else:
+            self.__urlFilters += field + str(urllib.parse.quote(value))
+
     def __processUsers(self):
         """Process users of the queue."""
         while self.__names.empty() and not self.__fin:
@@ -509,6 +558,7 @@ class GitHubCity:
                 self.__githubSecret + \
                 "&order=desc&q=sort:joined+type:user" + \
                 self.__urlLocations + \
+                self.__urlFilters + \
                 "&sort=joined&order=asc&per_page=100&page=" + \
                 str(page)
         else:
@@ -516,7 +566,9 @@ class GitHubCity:
                 self.__githubID + "&client_secret=" + \
                 self.__githubSecret + \
                 "&order=desc&q=sort:joined+type:user" + \
-                self.__urlLocations + "+created:" + \
+                self.__urlLocations + \
+                self.__urlFilters + \
+                "+created:" + \
                 start_date + ".." + final_date + \
                 "&sort=joined&order=" + order + \
                 "&per_page=100&page=" + str(page)
