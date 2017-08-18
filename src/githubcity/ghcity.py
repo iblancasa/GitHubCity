@@ -46,6 +46,7 @@ import json
 import logging
 import pystache
 import coloredlogs
+from githubcity.ghuser import GitHubUser
 
 
 class GitHubCity:
@@ -93,45 +94,45 @@ class GitHubCity:
         self.__lockGetUser = threading.Lock()
         self.__lockReadAddUser = threading.Lock()
         self.__server = "https://api.github.com/"
+        self.__intervals = []
         self.readConfig(configuration)
 
     def readConfig(self, configuration):
-            """Read configuration from dict.
+        """Read configuration from dict.
 
-            Read configuration from a JSON configuration file.
+        Read configuration from a JSON configuration file.
 
-            :param configuration: configuration to load.
-            :type configuration: dict.
-            """
-            self.__logger.debug("Reading configuration")
-            self.__city = configuration["name"]
-            self.__logger.info("City name: " + self.__city)
-            self.__intervals = configuration["intervals"]
-            self.__logger.debug("Intervals: " +
-                                str(self.__intervals))
-            self.__lastDay = configuration["last_date"]
-            self.__logger.debug("Last day: " + self.__lastDay)
-            self.__locations = configuration["locations"]
-            self.__logger.debug("Locations: " +
-                                str(self.__locations))
-            self.__excluded = set()
-            self.__excludedLocations = set()
+        :param configuration: configuration to load.
+        :type configuration: dict.
+        """
+        self.__logger.debug("Reading configuration")
+        self.__city = configuration["name"]
+        self.__logger.info("City name: " + self.__city)
+        self.__intervals = configuration["intervals"]
+        self.__logger.debug("Intervals: " +
+                            str(self.__intervals))
+        self.__lastDay = configuration["last_date"]
+        self.__logger.debug("Last day: " + self.__lastDay)
+        self.__locations = configuration["locations"]
+        self.__logger.debug("Locations: " +
+                            str(self.__locations))
+        self.__excluded = set()
+        self.__excludedLocations = set()
 
-            excluded = configuration["excludedUsers"]
-            for e in excluded:
-                self.__excluded.add(e)
+        excluded = configuration["excludedUsers"]
+        for e in excluded:
+            self.__excluded.add(e)
+        self.__logger.debug("Excluded users " +
+                            str(self.__excluded))
 
-            self.__logger.debug("Excluded users " +
-                                str(self.__excluded))
+        excluded = configuration["excludedLocations"]
+        for e in excluded:
+            self.__excludedLocations.add(e)
 
-            excluded = configuration["excludedLocations"]
-            for e in excluded:
-                self.__excludedLocations.add(e)
+        self.__logger.debug("Excluded locations " +
+                            str(self.__excludedLocations))
 
-            self.__logger.debug("Excluded locations " +
-                                str(self.__excludedLocations))
-
-            self.__addLocationsToURL(self.__locations)
+        self.__addLocationsToURL(self.__locations)
 
     def calculeToday(self):
         """Calcule the intervals from the last date."""
@@ -165,34 +166,34 @@ class GitHubCity:
             else:
                 self.__lockGetUser.release()
                 self.__addUser(new_user)
-                self.__logger.info("_processUsers:" +
+                self.__logger.info("__processUsers:" +
                                    str(self.__names.qsize()) +
                                    " users to  process")
 
-    def _addUser(self, new_user):
+    def __addUser(self, new_user):
         """Add new users to the list.
 
         :param new_user: name of a GitHub user to include in
             the ranking
         :type new_user: str.
         """
-        self._lockReadAddUser.acquire()
-        if new_user not in self._myusers and \
-                new_user not in self._excluded:
-            self._lockReadAddUser.release()
-            self._logger.log(6, "_addUser: Adding " + new_user)
-            self._myusers.add(new_user)
+        self.__lockReadAddUser.acquire()
+        if new_user not in self.__myusers and \
+                new_user not in self.__excluded:
+            self.__lockReadAddUser.release()
+            self.__logger.debug("__addUser: Adding " + new_user)
+            self.__myusers.add(new_user)
 
             myNewUser = GitHubUser(new_user)
             myNewUser.getData()
             myNewUser.getRealContributions()
 
-            userLoc = myNewUser.getLocation()
-            if not any(s in userLoc for s in self._excludedLocations):
-                self._dataUsers.append(myNewUser)
+            userLoc = myNewUser.location
+            if not any(s in userLoc for s in self.__excludedLocations):
+                self.__dataUsers.append(myNewUser)
         else:
-            self._logger.log(6, "_addUser: Excluding " + new_user)
-            self._lockReadAddUser.release()
+            self.__logger.debug("__addUser: Excluding " + new_user)
+            self.__lockReadAddUser.release()
 
     def __launchThreads(self, numThreads):
         """Launch some threads and start to process users.
@@ -340,7 +341,9 @@ class GitHubCity:
                     self.__logger.warning(log_message)
                     time.sleep(reset - now_sec)
                 code = 0
+            # pylint: disable=W0703
             except Exception as e:
+                self.__logger.exception(str(e))
                 self.__logger.exception("_readAPI: waiting 10 secs")
                 time.sleep(10)
 
@@ -349,36 +352,36 @@ class GitHubCity:
         return data
 
     def __validInterval(self, start, finish):
-            """Check if the interval is correct.
+        """Check if the interval is correct.
 
-            An interval is correct if it has less than 1001
-            users. If the interval is correct, it will be added
-            to '_intervals' attribute. Else, interval will be
-            split in two news intervals and these intervals
-            will be checked.
+        An interval is correct if it has less than 1001
+        users. If the interval is correct, it will be added
+        to '_intervals' attribute. Else, interval will be
+        split in two news intervals and these intervals
+        will be checked.
 
-            :param start: start date of the interval.
-            :type start: datetime.date.
-            :param finish: finish date of the interval.
-            :type finish: datetime.date.
-            """
-            url = self.__getURL(1,
-                                start.strftime("%Y-%m-%d"),
-                                finish.strftime("%Y-%m-%d"))
+        :param start: start date of the interval.
+        :type start: datetime.date.
+        :param finish: finish date of the interval.
+        :type finish: datetime.date.
+        """
+        url = self.__getURL(1,
+                            start.strftime("%Y-%m-%d"),
+                            finish.strftime("%Y-%m-%d"))
 
-            data = self.__readAPI(url)
+        data = self.__readAPI(url)
 
-            if data["total_count"] >= 1000:
-                middle = start + (finish - start)/2
-                self.__validInterval(start, middle)
-                self.__validInterval(middle, finish)
-            else:
-                self.__intervals.append([start.strftime("%Y-%m-%d"),
-                                        finish.strftime("%Y-%m-%d")])
-                self.__logger.info("New valid interval: " +
-                                   start.strftime("%Y-%m-%d") +
-                                   " to " +
-                                   finish.strftime("%Y-%m-%d"))
+        if data["total_count"] >= 1000:
+            middle = start + (finish - start)/2
+            self.__validInterval(start, middle)
+            self.__validInterval(middle, finish)
+        else:
+            self.__intervals.append([start.strftime("%Y-%m-%d"),
+                                     finish.strftime("%Y-%m-%d")])
+            self.__logger.info("New valid interval: " +
+                               start.strftime("%Y-%m-%d") +
+                               " to " +
+                               finish.strftime("%Y-%m-%d"))
 
     def calculateBestIntervals(self):
         """Calcule valid intervals of a city."""
@@ -387,8 +390,7 @@ class GitHubCity:
         today = datetime.datetime.now().date()
 
         self.__validInterval(datetime.date(2008, 1, 1), today)
-        self.__logger.info(
-                           "Total number of intervals: " +
+        self.__logger.info("Total number of intervals: " +
                            str(len(self.__intervals)))
         self.__lastDay = today.strftime("%Y-%m-%d")
 
