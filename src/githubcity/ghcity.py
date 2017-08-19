@@ -116,8 +116,8 @@ class GitHubCity:
         :type configuration: dict.
         """
         self.__logger.debug("Reading configuration")
-        self.__city = configuration["name"]
-        self.__logger.info("City name: " + self.__city)
+        self.city = configuration["name"]
+        self.__logger.info("City name: " + self.city)
         if "intervals" in configuration:
             self.__intervals = configuration["intervals"]
             self.__logger.debug("Intervals: " +
@@ -179,7 +179,7 @@ class GitHubCity:
         :rtype: dict.
         """
         config = {}
-        config["name"] = self.__city
+        config["name"] = self.city
         config["intervals"] = self.__intervals
         config["last_date"] = self.__lastDay
         config["excludedUsers"] = []
