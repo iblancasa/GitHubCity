@@ -139,8 +139,11 @@ class GitHubUser:
             reposText = counters[0].text.replace(" ", "")
             reposText = reposText.replace("\n", "").replace("k", "")
 
-            self.numberOfRepos = int(reposText.split(".")[0]) * 1000 + \
-                int(reposText.split(".")[1]) * 100
+            if reposText and len(reposText) > 1:
+                self.numberOfRepos = int(reposText.split(".")[0]) * 1000 + \
+                    int(reposText.split(".")[1]) * 100
+            elif reposText:
+                self.numberOfRepos = int(reposText.split(".")[0]) * 1000
 
     def __getNumberOfFollowers(self, web):
         """Scrap the number of followers from a GitHub profile.
@@ -154,8 +157,12 @@ class GitHubUser:
         else:
             follText = counters[2].text.replace(" ", "")
             follText = follText.replace("\n", "").replace("k", "")
-            self.followers = int(follText.split(".")[0])*1000 + \
-                int(follText.split(".")[1]) * 100
+
+            if follText and len(follText) > 1:
+                self.followers = int(follText.split(".")[0])*1000 + \
+                    int(follText.split(".")[1]) * 100
+            elif follText:
+                self.followers = int(follText.split(".")[0])*1000
 
     def __getLocation(self, web):
         """Scrap the location from a GitHub profile.
@@ -210,13 +217,17 @@ class GitHubUser:
 
         web = BeautifulSoup(data, "lxml")
 
-        self.__getContributions(web)
-        self.__getAvatar(web)
-        self.__getNumberOfRepositories(web)
-        self.__getNumberOfFollowers(web)
-        self.__getBio(web)
-        self.__getJoin(web)
-        self.__getOrganizations(web)
+        try:
+            self.__getContributions(web)
+            self.__getAvatar(web)
+            self.__getNumberOfRepositories(web)
+            self.__getNumberOfFollowers(web)
+            self.__getBio(web)
+            self.__getJoin(web)
+            self.__getOrganizations(web)
+        except Exception as e:
+            print("Error in user " + self.name)
+            print(e)
 
     def getRealContributions(self):
         """Get the real number of contributions (private + public)."""
