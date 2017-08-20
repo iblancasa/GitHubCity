@@ -125,7 +125,7 @@ class GitHubCity:
 
         if "last_date" in configuration:
             self.__lastDay = configuration["last_date"]
-            self.__logger.debug("Last day: " + self.__lastDay)\
+            self.__logger.debug("Last day: " + self.__lastDay)
 
         if "locations" in configuration:
             self.__locations = configuration["locations"]
