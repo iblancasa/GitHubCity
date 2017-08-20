@@ -197,6 +197,7 @@ class GitHubUser:
                 bioText = bio.replace("\n", "")
                 bioText = bioText.replace("\t", " ").replace("\"", "")
                 bioText = bioText.replace("\'", "")
+		bioText = bioText.replace("\\","")
                 self.bio = bioText
             else:
                 self.bio = ""
