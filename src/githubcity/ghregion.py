@@ -62,10 +62,18 @@ class GitHubRegion():
         exportedData = {}
         exportedUsers = self.getSortedUsers()
 
+        position = 1
+
         if limit == 0:
             exportedData["users"] = exportedUsers
         else:
             exportedData["users"] = exportedUsers[:limit]
+
+        for u in exportedData["users"]:
+            u["position"] = position
+            u["comma"] = position < len(exportedData["users"])
+            position += 1
+
         exportedData["extraData"] = data
 
         with open(template_file_name) as template_file:
