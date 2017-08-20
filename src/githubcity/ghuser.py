@@ -38,6 +38,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from bs4 import BeautifulSoup
 
+
 class GitHubUser:
     """Manager of a GitHub User.
 
@@ -197,7 +198,7 @@ class GitHubUser:
                 bioText = bio.replace("\n", "")
                 bioText = bioText.replace("\t", " ").replace("\"", "")
                 bioText = bioText.replace("\'", "")
-		bioText = bioText.replace("\\","")
+                bioText = bioText.replace("\\", "")
                 self.bio = bioText
             else:
                 self.bio = ""
