@@ -1,11 +1,4 @@
-"""
-
-Allows to get information about the GitHub's users with a location.
-
-This module allow to developers to get all users of GitHub that have a
-given city in their profile. For example, if I want getting all users
-from London,. I will get all users that have London in their
-profiles (they could live in London or not)
+"""Allows to get all data about a given GitHub City.
 
 This module allow to developers to get all users of GitHub that have a
 given city in their profile. For example, if I want getting all users
@@ -17,7 +10,7 @@ Original idea: https://github.com/JJ/github-city-rankings
 License:
 
 The MIT License (MIT)
-    Copyright (c) 2015 Israel Blancas @iblancasa (http://iblancasa.com/)
+    Copyright (c) 2015-2017 Israel Blancas @iblancasa (http://iblancasa.com/)
 
     Permission is hereby granted, free of charge, to any person
     obtaining a copy of this software and associated documentation
@@ -39,10 +32,17 @@ The MIT License (MIT)
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
     ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
     USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 """
-
-# pylint: disable=E0603
-__all__ = ("ghuser", "ghcity")
-__version__ = "0.2"
-__license__ = "MIT"
+from distutils.core import setup
+setup(
+    name='githubcity',
+    packages=['githubcity'],
+    version='0.1.3',
+    description='GitHub city ranking creator',
+    author='Israel Blancas @iblancasa',
+    author_email='iblancasa@gmail.com',
+    url='https://github.com/iblancasa/GitHubCity',
+    download_url='https://github.com/iblancasa/GitHubCity/tarball/0.01',
+    keywords=['github', 'ranking', 'data', 'api'],
+    classifiers=[]
+)
