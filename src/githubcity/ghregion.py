@@ -47,7 +47,9 @@ class GitHubRegion():
     def addCity(self, fileName):
         with open(fileName) as data_file:
             data = json.load(data_file)
-        self.__users.extend(data["users"])
+        for u in data["users"]:
+            if not any(d["name"] == u["name"] for d in self.__users):
+                self.__users.append(u)
 
     def export(self, template_file_name, output_file_name,
                sort="public", data=None, limit=0):
@@ -62,10 +64,18 @@ class GitHubRegion():
         exportedData = {}
         exportedUsers = self.getSortedUsers()
 
+        position = 1
+
         if limit == 0:
             exportedData["users"] = exportedUsers
         else:
             exportedData["users"] = exportedUsers[:limit]
+
+        for u in exportedData["users"]:
+            u["position"] = position
+            u["comma"] = position < len(exportedData["users"])
+            position += 1
+
         exportedData["extraData"] = data
 
         with open(template_file_name) as template_file:
