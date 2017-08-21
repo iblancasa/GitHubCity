@@ -47,7 +47,9 @@ class GitHubRegion():
     def addCity(self, fileName):
         with open(fileName) as data_file:
             data = json.load(data_file)
-        self.__users.extend(data["users"])
+        for u in data["users"]:
+            if not any(d["name"] == u["name"] for d in self.__users):
+                self.__users.append(u)
 
     def export(self, template_file_name, output_file_name,
                sort="public", data=None, limit=0):
