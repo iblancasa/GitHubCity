@@ -1,4 +1,4 @@
-"""Allows to get all data about a given GitHub City.
+"""Mix the output of different GitHubCitis.
 
 This module allow to developers to get all users of GitHub that have a
 given city in their profile. For example, if I want getting all users
@@ -36,15 +36,23 @@ The MIT License (MIT)
 
 from __future__ import absolute_import
 import json
-import logging
-import coloredlogs
 import pystache
 
+
 class GitHubRegion():
+    """Handle the users from different cities."""
+
     def __init__(self):
+        """Init the object."""
         self.__users = []
 
     def addCity(self, fileName):
+        """Add a JSON file and read the users.
+
+        :param fileName: path to the JSON file. This file has to have a list of
+        users, called users.
+        :type fileName: str.
+        """
         with open(fileName) as data_file:
             data = json.load(data_file)
         for u in data["users"]:
@@ -63,10 +71,10 @@ class GitHubRegion():
         """
         exportedData = {}
         exportedUsers = self.getSortedUsers()
-
+        template = self.__getTemplate(template_file_name)
         position = 1
 
-        if limit == 0:
+        if not limit:
             exportedData["users"] = exportedUsers
         else:
             exportedData["users"] = exportedUsers[:limit]
@@ -78,16 +86,27 @@ class GitHubRegion():
 
         exportedData["extraData"] = data
 
-        with open(template_file_name) as template_file:
-            template_raw = template_file.read()
-
-        template = pystache.parse(template_raw)
         renderer = pystache.Renderer()
-
         output = renderer.render(template, exportedData)
 
         with open(output_file_name, "w") as text_file:
             text_file.write(output)
+
+    @staticmethod
+    def __getTemplate(template_file_name):
+        """Get temaplte to save the ranking.
+
+        :param template_file_name: path to the template.
+        :type template_file_name: str.
+
+        :return: template for the file.
+        :rtype: pystache's template.
+        """
+        with open(template_file_name) as template_file:
+            template_raw = template_file.read()
+
+        template = pystache.parse(template_raw)
+        return template
 
     def getSortedUsers(self, order="public"):
         """Return a list with sorted users.
