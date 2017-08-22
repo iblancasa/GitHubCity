@@ -374,12 +374,9 @@ class GitHubCity:
             sort (str): field to sort the users
         """
         exportedData = {}
-        exportedUsers = self.__exportUsers(sort)
+        exportedUsers = self.__exportUsers(sort, limit)
 
-        if limit == 0:
-            exportedData["users"] = exportedUsers
-        else:
-            exportedData["users"] = exportedUsers[:limit]
+        exportedData["users"] = exportedUsers
         exportedData["extraData"] = data
 
         with open(template_file_name) as template_file:
@@ -432,7 +429,7 @@ class GitHubCity:
                                   reverse=True)
         return self.__dataUsers
 
-    def __exportUsers(self, sort):
+    def __exportUsers(self, sort, limit=0):
         """Export the users to a dictionary.
 
         :param sort: field to sort the users
@@ -442,6 +439,10 @@ class GitHubCity:
         """
         position = 1
         dataUsers = self.getSortedUsers(sort)
+
+        if limit:
+            dataUsers = dataUsers[:limit]
+
         exportedUsers = []
 
         for u in dataUsers:
