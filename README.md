@@ -10,23 +10,57 @@ This is a small library which gets all GitHub users given a city. Original idea 
 Now, you only can get all user names from a city (with a city in the location field). In future, this will be an amazing library.
 
 ## What I need to run this?
-You will need to install Python 3. Python 2 is not supported. I recommend you [install Anaconda](https://www.continuum.io/).
+You will need to install Python 3. *Python 2 is not supported*.
 
 In addition, you will need to get ID and Secret from a GitHub application. [You can register your own application here!](https://github.com/settings/applications/new).
 
 #### Dependences
 You have a ``requeriments.txt`` file. Install all dependences with ``pip install -r requeriments.txt``.
 
+## How to install
+
+There are two options to install this library and its dependencies.
+
+### Install from the source code
+You need to clone (or download) this repository. Then, go to ``src`` folder and run:
+```shell
+python setup.py install
+```
+
+### Install from pip
+
+[This library is available to be installed using pip.](https://pypi.python.org/pypi?:action=display&name=githubcity)
+
+```shell
+pip install github
+```
+
 
 ## Getting started
 #### Basic example
 ```python
-nameCity = "Granada"
-GitHubID = "asdadfs5ds8sdfsdf8c"
-GitHubSecret = "asdad45asfsdf8vdfg8sdfgv"
-
-city = GitHubCity(nameCity,GitHubID,GitHubSecret)
-city.getCityUsers()
+idGH = os.environ.get('GH_ID')
+secretGH = os.environ.get('GH_SECRET')
+configuration = {
+   "excludedLocations": [],
+   "excludedUsers": [],
+   "intervals": [
+       [
+           "2008-01-01",
+           "2015-12-30"
+       ]
+   ],
+   "last_date": "2015-12-30",
+   "locations": [
+       "Ceuta"
+       ],
+   "name": "Ceuta"
+       }
+ciudad = GitHubCity(idGH, secretGH, configuration)
+ciudad.calculateBestIntervals()
+ciudad.addFilter("repos", ">1")
+ciudad.addFilter("followers", ">1")
+ciudad.getCityUsers()
 ```
 
 #### Excluding users
@@ -48,13 +82,10 @@ You can generate a JSON file like this (each element is an user and this propert
 ]
 ```
 
-When you read this file and parse it to JSON, you can add it to the class in constructor:
-```python
-GitHubCity(nameCity,GitHubID,GitHubSecret, jsonData)
-```
+
 
 ### The MIT License (MIT)
-    Copyright (c) 2015 Israel Blancas @iblancasa (http://iblancasa.com/)
+    Copyright (c) 2015-2017 Israel Blancas @iblancasa (http://iblancasa.com/)
 
     Permission is hereby granted, free of charge, to any person obtaining a copy of this software
     and associated documentation files (the “Software”), to deal in the Software without

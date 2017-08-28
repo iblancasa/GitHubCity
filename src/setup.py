@@ -33,16 +33,26 @@ The MIT License (MIT)
     ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
     USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
-from distutils.core import setup
+from setuptools import setup
 setup(
     name='githubcity',
     packages=['githubcity'],
-    version='0.1.3',
+    version='1.0.1',
     description='GitHub city ranking creator',
     author='Israel Blancas @iblancasa',
     author_email='iblancasa@gmail.com',
     url='https://github.com/iblancasa/GitHubCity',
     download_url='https://github.com/iblancasa/GitHubCity/tarball/0.01',
     keywords=['github', 'ranking', 'data', 'api'],
-    classifiers=[]
+    classifiers=[],
+    install_requires=[
+        'python-dateutil==2.4.2',
+        'beautifulsoup4==4.4.1',
+        'lxml==3.6.4',
+        'coloredlogs==5.0',
+        'pystache==0.5.4',
+        'httpretty==0.8.14'
+    ],
+    long_description=open('../README.md').read(),
+    license='MIT'
 )
