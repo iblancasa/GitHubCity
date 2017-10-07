@@ -527,7 +527,9 @@ class GitHubCity:
                     log_message += str(reset - now_sec)
                     log_message += " secs"
                     self.__logger.warning(log_message)
-                    time.sleep(reset - now_sec)
+                    sleep_duration = reset - now_sec
+                    if sleep_duration > 0:
+                        time.sleep(reset - now_sec)
                 code = 0
             # pylint: disable=W0703
             except Exception as e:
