@@ -22,7 +22,7 @@ def main(argv):
         "name": "Ceuta"
             }
     ciudad = GitHubCity(idGH, secretGH, configuration)
-    #ciudad.readConfigFromJSON(argv[0])
+    # ciudad.readConfigFromJSON(argv[0])
 
 
 if __name__ == "__main__":

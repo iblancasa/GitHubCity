@@ -15,8 +15,8 @@ You will need to install Python 3. *Python 2 is not supported*.
 
 In addition, you will need to get ID and Secret from a GitHub application. [You can register your own application here!](https://github.com/settings/applications/new).
 
-#### Dependences
-You have a ``requeriments.txt`` file. Install all dependences with ``pip install -r requeriments.txt``.
+#### Dependencies
+You have a ``requirements.txt`` file. Install all dependences with ``pip install -r requirements.txt``.
 
 ## How to install
 

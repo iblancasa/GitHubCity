@@ -8,5 +8,6 @@ def main(argv):
     user.getRealContributions()
     print(user.export())
 
+
 if __name__ == "__main__":
     main(sys.argv[1:])
