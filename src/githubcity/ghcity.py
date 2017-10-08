@@ -520,14 +520,19 @@ class GitHubCity:
             except urllib.error.URLError as e:
                 if hasattr(e, "getheader"):
                     reset = int(e.getheader("X-RateLimit-Reset"))
-                    utcAux = datetime.datetime.utcnow()
-                    utcAux = utcAux.utctimetuple()
-                    now_sec = calendar.timegm(utcAux)
-                    log_message = "Limit of API. Wait: "
-                    log_message += str(reset - now_sec)
-                    log_message += " secs"
+                    if reset < 0:
+                        log_message = "Error when reading response. Wait: 30 secs"
+                        sleep_duration = 30
+                    else:
+                        utcAux = datetime.datetime.utcnow()
+                        utcAux = utcAux.utctimetuple()
+                        now_sec = calendar.timegm(utcAux)
+                        sleep_duration = reset - now_sec
+                        log_message = "Limit of API. Wait: "
+                        log_message += str(sleep_duration)
+                        log_message += " secs"
                     self.__logger.warning(log_message)
-                    time.sleep(reset - now_sec)
+                    time.sleep(sleep_duration)
                 code = 0
             # pylint: disable=W0703
             except Exception as e:
