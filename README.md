@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/iblancasa/GitHubCity.svg?branch=master)](https://travis-ci.org/iblancasa/GitHubCity)
 [![GitHub license](https://img.shields.io/github/license/iblancasa/GitHubCity.svg)](https://github.com/iblancasa/GitHubCity)[![Coverage Status](https://coveralls.io/repos/iblancasa/GitHubCity/badge.svg?branch=master&service=github)](https://coveralls.io/github/iblancasa/GitHubCity?branch=master)
 [![Known Vulnerabilities](https://snyk.io/test/github/iblancasa/githubcity/badge.svg)](https://snyk.io/test/github/iblancasa/githubcity)
+[![Dependency Status](https://gemnasium.com/badges/github.com/iblancasa/GitHubCity.svg)](https://gemnasium.com/github.com/iblancasa/GitHubCity)
 
 ## What is this?
 This is a small library which gets all GitHub users given a city. Original idea is [Top-GitHub-Users-Data](https://github.com/JJ/top-github-users-data) by [@JJ](https://github.com/JJ), an adaptation of [top-github-users](https://github.com/paulmillr/top-github-users) from [@paulmillr](https://github.com/paulmillr/).
