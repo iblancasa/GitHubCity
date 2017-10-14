@@ -34,18 +34,18 @@ The MIT License (MIT)
     USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
-from __future__ import absolute_import
-import urllib.request
-import urllib.parse
-import threading
 import datetime
-import calendar
-import queue
-import time
-import json
-import logging
-import pystache
-import coloredlogs
+from __future__ import absolute_import
+from urllib.request import Request, urlopen
+from urllib.parse import quote
+from threading import Lock, Thread
+from calendar import timegm
+from queue import Queue, Empty
+from time import sleep
+from json import load, loads, dump
+from logging import getLogger
+from pystache import parse, Renderer
+from coloredlogs import install 
 from githubcity.ghuser import GitHubUser
 
 
@@ -71,7 +71,7 @@ class GitHubCity:
             an application in
             https://github.com/settings/applications/new
         """
-        self.__logger = logging.getLogger("GitHubCity")
+        self.__logger = getLogger("GitHubCity")
         self.__logger.info("Starting GitHubCity")
         coloredlogs.install(level=verbosity)
 
@@ -159,7 +159,7 @@ class GitHubCity:
         """
         self.__logger.debug("readConfigFromJSON: reading from " + fileName)
         with open(fileName) as data_file:
-            data = json.load(data_file)
+            data = load(data_file)
         self.readConfig(data)
 
     def configToJson(self, fileName):
@@ -170,7 +170,7 @@ class GitHubCity:
         """
         config = self.getConfig()
         with open(fileName, "w") as outfile:
-            json.dump(config, outfile, indent=4, sort_keys=True)
+            dump(config, outfile, indent=4, sort_keys=True)
 
     def getConfig(self):
         """Return the configuration of the city.
@@ -208,9 +208,9 @@ class GitHubCity:
             value = ":" + value
 
         if self.__urlFilters:
-            self.__urlFilters += "+" + field + str(urllib.parse.quote(value))
+            self.__urlFilters += "+" + field + str(quote(value))
         else:
-            self.__urlFilters += field + str(urllib.parse.quote(value))
+            self.__urlFilters += field + str(quote(value))
 
     def __processUsers(self):
         """Process users of the queue."""
@@ -382,8 +382,8 @@ class GitHubCity:
         with open(template_file_name) as template_file:
             template_raw = template_file.read()
 
-        template = pystache.parse(template_raw)
-        renderer = pystache.Renderer()
+        template = parse(template_raw)
+        renderer = Renderer()
 
         output = renderer.render(template, exportedData)
 
@@ -474,7 +474,7 @@ class GitHubCity:
         """
         for l in self.__locations:
             self.__urlLocations += "+location:\""\
-             + str(urllib.parse.quote(l)) + "\""
+             + str(quote(l)) + "\""
 
     def __launchThreads(self, numThreads):
         """Launch some threads and start to process users.
@@ -532,13 +532,13 @@ class GitHubCity:
                         log_message += str(sleep_duration)
                         log_message += " secs"
                     self.__logger.warning(log_message)
-                    time.sleep(sleep_duration)
+                    sleep(sleep_duration)
                 code = 0
             # pylint: disable=W0703
             except Exception as e:
                 self.__logger.exception(str(e))
                 self.__logger.exception("_readAPI: waiting 10 secs")
-                time.sleep(10)
+                sleep(10)
 
         data = json.loads(response.read().decode('utf-8'))
         response.close()
