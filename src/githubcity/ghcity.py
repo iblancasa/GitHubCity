@@ -543,13 +543,13 @@ class GitHubCity:
                 self.__logger.exception("_readAPI: waiting 10 secs")
                 time.sleep(10)
 
-        response_body = response.read()
+        responseBody = response.read()
 
         if response.getheader('Content-Encoding') == 'gzip':
-            with gzip.GzipFile(fileobj=io.BytesIO(response_body)) as gz_file:
-                response_body = gz_file.read()
+            with gzip.GzipFile(fileobj=io.BytesIO(responseBody)) as gzFile:
+                responseBody = gzFile.read()
 
-        data = json.loads(response_body.decode('utf-8'))
+        data = json.loads(responseBody.decode('utf-8'))
         response.close()
         return data
 
