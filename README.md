@@ -9,7 +9,7 @@
 This is a small library which gets all GitHub users given a city. Original idea is [Top-GitHub-Users-Data](https://github.com/JJ/top-github-users-data) by [@JJ](https://github.com/JJ), an adaptation of [top-github-users](https://github.com/paulmillr/top-github-users) from [@paulmillr](https://github.com/paulmillr/).
 
 ## What I can do with this?
-Now, you only can get all user names from a city (with a city in the location field). In future, this will be an amazing library.
+This is an amazing Python library to study the GitHub community in a location. You can get all the GitHub's users from a given location and obtain some data. For instance, you can generate one ranking like [this ranking with the users from Spain (and its provinces)](https://github.com/iblancasa/GitHubRankingsSpain).
 
 ## What I need to run this?
 You will need to install Python 3. *Python 2 is not supported*.
@@ -83,6 +83,8 @@ You can generate a JSON file like this (each element is an user and this propert
   }
 ]
 ```
+
+[You can see one example about how to use this library here](https://github.com/iblancasa/GitHubSpanishRankingGenerator).
 
 
 
