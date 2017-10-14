@@ -44,6 +44,8 @@ import queue
 import time
 import json
 import logging
+import gzip
+import io
 import pystache
 import coloredlogs
 from githubcity.ghuser import GitHubUser
@@ -510,7 +512,8 @@ class GitHubCity:
         code = 0
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) \
                libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
-               'Accept': 'application/vnd.github.v3.text-match+json'}
+               'Accept': 'application/vnd.github.v3.text-match+json',
+               'Accept-Encoding': 'gzip'}
         while code != 200:
             req = urllib.request.Request(url, headers=hdr)
             try:
@@ -540,7 +543,13 @@ class GitHubCity:
                 self.__logger.exception("_readAPI: waiting 10 secs")
                 time.sleep(10)
 
-        data = json.loads(response.read().decode('utf-8'))
+        response_body = response.read()
+
+        if response.getheader('Content-Encoding') == 'gzip':
+            with gzip.GzipFile(fileobj=io.BytesIO(response_body)) as gz_file:
+                response_body = gz_file.read()
+
+        data = json.loads(response_body.decode('utf-8'))
         response.close()
         return data
 
