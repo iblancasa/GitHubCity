@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/iblancasa/GitHubCity.svg?branch=master)](https://travis-ci.org/iblancasa/GitHubCity)
 [![GitHub license](https://img.shields.io/github/license/iblancasa/GitHubCity.svg)](https://github.com/iblancasa/GitHubCity)[![Coverage Status](https://coveralls.io/repos/iblancasa/GitHubCity/badge.svg?branch=master&service=github)](https://coveralls.io/github/iblancasa/GitHubCity?branch=master)
+[![Known Vulnerabilities](https://snyk.io/test/github/iblancasa/githubcity/badge.svg)](https://snyk.io/test/github/iblancasa/githubcity)
+[![Dependency Status](https://gemnasium.com/badges/github.com/iblancasa/GitHubCity.svg)](https://gemnasium.com/github.com/iblancasa/GitHubCity)
 
 ## What is this?
 This is a small library which gets all GitHub users given a city. Original idea is [Top-GitHub-Users-Data](https://github.com/JJ/top-github-users-data) by [@JJ](https://github.com/JJ), an adaptation of [top-github-users](https://github.com/paulmillr/top-github-users) from [@paulmillr](https://github.com/paulmillr/).
@@ -14,8 +16,8 @@ You will need to install Python 3. *Python 2 is not supported*.
 
 In addition, you will need to get ID and Secret from a GitHub application. [You can register your own application here!](https://github.com/settings/applications/new).
 
-#### Dependences
-You have a ``requeriments.txt`` file. Install all dependences with ``pip install -r requeriments.txt``.
+#### Dependencies
+You have a ``requirements.txt`` file. Install all dependences with ``pip install -r requirements.txt``.
 
 ## How to install
 
