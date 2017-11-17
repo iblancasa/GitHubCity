@@ -34,7 +34,7 @@ python setup.py install
 [This library is available to be installed using pip.](https://pypi.python.org/pypi?:action=display&name=githubcity)
 
 ```shell
-pip install github
+pip install githubcity
 ```
 
 
