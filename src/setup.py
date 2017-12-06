@@ -36,7 +36,6 @@ The MIT License (MIT)
 from setuptools import setup
 setup(
     name='githubcity',
-    packages=['githubcity'],
     version='1.0.1',
     description='GitHub city ranking creator',
     author='Israel Blancas @iblancasa',
@@ -53,6 +52,8 @@ setup(
         'pystache==0.5.4',
         'httpretty==0.8.14'
     ],
+    packages=['githubcity'],
+    py_modules=["githubcity"],
     long_description=open('../README.md').read(),
     license='MIT'
 )
