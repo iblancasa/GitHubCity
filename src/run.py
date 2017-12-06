@@ -1,11 +1,11 @@
 from githubcity.ghcity import GitHubCity
-import os
+from os import environ
 import sys
 
 
 def main(argv):
-    idGH = os.environ.get('GH_ID')
-    secretGH = os.environ.get('GH_SECRET')
+    idGH = environ.get('GH_ID')
+    secretGH = environ.get('GH_SECRET')
     configuration = {
         "excludedLocations": [],
         "excludedUsers": [],

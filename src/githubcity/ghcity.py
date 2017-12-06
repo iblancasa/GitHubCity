@@ -35,18 +35,18 @@ The MIT License (MIT)
 """
 
 from __future__ import absolute_import
-import urllib.request
-import urllib.parse
-import threading
-import datetime
-import calendar
-import queue
-import time
-import json
-import logging
-import pystache
-import coloredlogs
+from urllib.request import Request, urlopen
+from urllib.parse import quote
+from threading import Lock, Thread
+from calendar import timegm
+from queue import Queue, Empty
+from time import sleep
+from json import load, loads, dump
+from logging import getLogger
+from pystache import parse, Renderer
+from coloredlogs import install
 from githubcity.ghuser import GitHubUser
+import datetime
 
 
 class GitHubCity:
@@ -71,9 +71,9 @@ class GitHubCity:
             an application in
             https://github.com/settings/applications/new
         """
-        self.__logger = logging.getLogger("GitHubCity")
+        self.__logger = getLogger("GitHubCity")
         self.__logger.info("Starting GitHubCity")
-        coloredlogs.install(level=verbosity)
+        install(level=verbosity)
 
         if not githubID:
             self.__logger.exception("init: No GitHub ID inserted")
@@ -85,7 +85,7 @@ class GitHubCity:
             raise Exception("init: No GitHub Secret inserted")
         self.__githubSecret = githubSecret
 
-        self.__names = queue.Queue()
+        self.__names = Queue()
         self.__urlLocations = ""
         self.__urlFilters = ""
         self.__myusers = set()
@@ -93,8 +93,8 @@ class GitHubCity:
         self.__threads = set()
         self.__fin = False
         self.__lastDay = False
-        self.__lockGetUser = threading.Lock()
-        self.__lockReadAddUser = threading.Lock()
+        self.__lockGetUser = Lock()
+        self.__lockReadAddUser = Lock()
         self.__server = "https://api.github.com/"
         self.__intervals = []
         self.__excluded = []
@@ -159,7 +159,7 @@ class GitHubCity:
         """
         self.__logger.debug("readConfigFromJSON: reading from " + fileName)
         with open(fileName) as data_file:
-            data = json.load(data_file)
+            data = load(data_file)
         self.readConfig(data)
 
     def configToJson(self, fileName):
@@ -170,7 +170,7 @@ class GitHubCity:
         """
         config = self.getConfig()
         with open(fileName, "w") as outfile:
-            json.dump(config, outfile, indent=4, sort_keys=True)
+            dump(config, outfile, indent=4, sort_keys=True)
 
     def getConfig(self):
         """Return the configuration of the city.
@@ -208,9 +208,9 @@ class GitHubCity:
             value = ":" + value
 
         if self.__urlFilters:
-            self.__urlFilters += "+" + field + str(urllib.parse.quote(value))
+            self.__urlFilters += "+" + field + str(quote(value))
         else:
-            self.__urlFilters += field + str(urllib.parse.quote(value))
+            self.__urlFilters += field + str(quote(value))
 
     def __processUsers(self):
         """Process users of the queue."""
@@ -221,7 +221,7 @@ class GitHubCity:
             self.__lockGetUser.acquire()
             try:
                 new_user = self.__names.get(False)
-            except queue.Empty:
+            except Empty:
                 self.__lockGetUser.release()
                 return
             else:
@@ -382,8 +382,8 @@ class GitHubCity:
         with open(template_file_name) as template_file:
             template_raw = template_file.read()
 
-        template = pystache.parse(template_raw)
-        renderer = pystache.Renderer()
+        template = parse(template_raw)
+        renderer = Renderer()
 
         output = renderer.render(template, exportedData)
 
@@ -406,27 +406,10 @@ class GitHubCity:
         :return: a list of the github users sorted by the selected field.
         :rtype: str.
         """
-        if order == "contributions":
-            self.__dataUsers.sort(key=lambda u: u.contributions,
-                                  reverse=True)
-        elif order == "public":
-            self.__dataUsers.sort(key=lambda u: u.public,
-                                  reverse=True)
-        elif order == "private":
-            self.__dataUsers.sort(key=lambda u: u.private,
-                                  reverse=True)
-        elif order == "name":
-            self.__dataUsers.sort(key=lambda u: u.name, reverse=True)
-        elif order == "followers":
-            self.__dataUsers.sort(key=lambda u: u.followers, reverse=True)
-        elif order == "join":
-            self.__dataUsers.sort(key=lambda u: u.join, reverse=True)
-        elif order == "organizations":
-            self.__dataUsers.sort(key=lambda u: u.organizations,
-                                  reverse=True)
-        elif order == "repositories":
-            self.__dataUsers.sort(key=lambda u: u.repositories,
-                                  reverse=True)
+        try:
+            self.__dataUsers.sort(key=lambda u: getattr(u, order), reverse=True)
+        except AttributeError:
+            pass
         return self.__dataUsers
 
     def __exportUsers(self, sort, limit=0):
@@ -474,7 +457,7 @@ class GitHubCity:
         """
         for l in self.__locations:
             self.__urlLocations += "+location:\""\
-             + str(urllib.parse.quote(l)) + "\""
+             + str(quote(l)) + "\""
 
     def __launchThreads(self, numThreads):
         """Launch some threads and start to process users.
@@ -487,7 +470,7 @@ class GitHubCity:
             self.__logger.debug("Launching thread number " +
                                 str(i))
             i += 1
-            newThr = threading.Thread(target=self.__processUsers)
+            newThr = Thread(target=self.__processUsers)
             newThr.setDaemon(True)
             self.__threads.add(newThr)
             newThr.start()
@@ -510,12 +493,13 @@ class GitHubCity:
         code = 0
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) \
                libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
-               'Accept': 'application/vnd.github.v3.text-match+json'}
+               'Accept': 'application/vnd.github.v3.text-match+json',
+               'Accept-Encoding': 'gzip'}
         while code != 200:
-            req = urllib.request.Request(url, headers=hdr)
+            req = Request(url, headers=hdr)
             try:
                 self.__logger.debug("Getting " + url)
-                response = urllib.request.urlopen(req)
+                response = urlopen(req)
                 code = response.code
             except urllib.error.URLError as e:
                 if hasattr(e, "getheader"):
@@ -526,21 +510,27 @@ class GitHubCity:
                     else:
                         utcAux = datetime.datetime.utcnow()
                         utcAux = utcAux.utctimetuple()
-                        now_sec = calendar.timegm(utcAux)
+                        now_sec = timegm(utcAux)
                         sleep_duration = reset - now_sec
                         log_message = "Limit of API. Wait: "
                         log_message += str(sleep_duration)
                         log_message += " secs"
                     self.__logger.warning(log_message)
-                    time.sleep(sleep_duration)
+                    sleep(sleep_duration)
                 code = 0
             # pylint: disable=W0703
             except Exception as e:
                 self.__logger.exception(str(e))
                 self.__logger.exception("_readAPI: waiting 10 secs")
-                time.sleep(10)
+                sleep(10)
 
-        data = json.loads(response.read().decode('utf-8'))
+        responseBody = response.read()
+
+        if response.getheader('Content-Encoding') == 'gzip':
+            with gzip.GzipFile(fileobj=io.BytesIO(responseBody)) as gzFile:
+                responseBody = gzFile.read()
+
+        data = json.loads(responseBody.decode('utf-8'))
         response.close()
         return data
 

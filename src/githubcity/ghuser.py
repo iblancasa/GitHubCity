@@ -31,8 +31,8 @@ The MIT License (MIT)
 
 """
 from __future__ import absolute_import
-import time
-import urllib.request
+from time import sleep
+from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -296,17 +296,17 @@ class GitHubUser:
                'X-PJAX': 'true'}
 
         while code != 200:
-            req = urllib.request.Request(url, headers=hdr)
+            req = Request(url, headers=hdr)
             try:
-                response = urllib.request.urlopen(req)
+                response = urlopen(req)
                 code = response.code
-                time.sleep(0.01)
+                sleep(0.01)
             except HTTPError as e:
                 code = e.code
                 if code == 404:
                     break
             except URLError as e:
-                time.sleep(3)
+                sleep(3)
 
         if code == 404:
             raise Exception("User was not found")
