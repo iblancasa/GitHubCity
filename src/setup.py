@@ -36,7 +36,7 @@ The MIT License (MIT)
 from setuptools import setup
 setup(
     name='githubcity',
-    version='1.0.1',
+    version='1.0.4',
     description='GitHub city ranking creator',
     author='Israel Blancas @iblancasa',
     author_email='iblancasa@gmail.com',
@@ -46,8 +46,8 @@ setup(
     classifiers=[],
     install_requires=[
         'python-dateutil==2.4.2',
-        'beautifulsoup4==4.4.1',
-        'lxml==3.6.4',
+        'beautifulsoup4==4.6.0',
+        'lxml==4.1.1',
         'coloredlogs==5.0',
         'pystache==0.5.4',
         'httpretty==0.8.14'
