@@ -37,6 +37,7 @@ The MIT License (MIT)
 from __future__ import absolute_import
 from urllib.request import Request, urlopen
 from urllib.parse import quote
+from urllib.error import HTTPError
 from threading import Lock, Thread
 from calendar import timegm
 from queue import Queue, Empty
@@ -45,8 +46,10 @@ from json import load, loads, dump
 from logging import getLogger
 from pystache import parse, Renderer
 from coloredlogs import install
-from githubcity.ghuser import GitHubUser
 import datetime
+from gzip import GzipFile
+from io import BytesIO
+from githubcity.ghuser import GitHubUser
 
 
 class GitHubCity:
@@ -501,9 +504,9 @@ class GitHubCity:
                 self.__logger.debug("Getting " + url)
                 response = urlopen(req)
                 code = response.code
-            except urllib.error.URLError as e:
-                if hasattr(e, "getheader"):
-                    reset = int(e.getheader("X-RateLimit-Reset"))
+            except HTTPError as e:
+                if hasattr(e, "headers"):
+                    reset = int(e.headers("X-RateLimit-Reset"))
                     if reset < 0:
                         log_message = "Error when reading response. Wait: 30 secs"
                         sleep_duration = 30
@@ -527,10 +530,10 @@ class GitHubCity:
         responseBody = response.read()
 
         if response.getheader('Content-Encoding') == 'gzip':
-            with gzip.GzipFile(fileobj=io.BytesIO(responseBody)) as gzFile:
+            with GzipFile(fileobj=BytesIO(responseBody)) as gzFile:
                 responseBody = gzFile.read()
 
-        data = json.loads(responseBody.decode('utf-8'))
+        data = loads(responseBody.decode('utf-8'))
         response.close()
         return data
 
