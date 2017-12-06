@@ -406,27 +406,10 @@ class GitHubCity:
         :return: a list of the github users sorted by the selected field.
         :rtype: str.
         """
-        if order == "contributions":
-            self.__dataUsers.sort(key=lambda u: u.contributions,
-                                  reverse=True)
-        elif order == "public":
-            self.__dataUsers.sort(key=lambda u: u.public,
-                                  reverse=True)
-        elif order == "private":
-            self.__dataUsers.sort(key=lambda u: u.private,
-                                  reverse=True)
-        elif order == "name":
-            self.__dataUsers.sort(key=lambda u: u.name, reverse=True)
-        elif order == "followers":
-            self.__dataUsers.sort(key=lambda u: u.followers, reverse=True)
-        elif order == "join":
-            self.__dataUsers.sort(key=lambda u: u.join, reverse=True)
-        elif order == "organizations":
-            self.__dataUsers.sort(key=lambda u: u.organizations,
-                                  reverse=True)
-        elif order == "repositories":
-            self.__dataUsers.sort(key=lambda u: u.repositories,
-                                  reverse=True)
+        try:
+            self.__dataUsers.sort(key=lambda u: getattr(u, order), reverse=True)
+        except AttributeError:
+            pass
         return self.__dataUsers
 
     def __exportUsers(self, sort, limit=0):
@@ -510,7 +493,8 @@ class GitHubCity:
         code = 0
         hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) \
                libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
-               'Accept': 'application/vnd.github.v3.text-match+json'}
+               'Accept': 'application/vnd.github.v3.text-match+json',
+               'Accept-Encoding': 'gzip'}
         while code != 200:
             req = Request(url, headers=hdr)
             try:
@@ -540,7 +524,13 @@ class GitHubCity:
                 self.__logger.exception("_readAPI: waiting 10 secs")
                 sleep(10)
 
-        data = loads(response.read().decode('utf-8'))
+        responseBody = response.read()
+
+        if response.getheader('Content-Encoding') == 'gzip':
+            with gzip.GzipFile(fileobj=io.BytesIO(responseBody)) as gzFile:
+                responseBody = gzFile.read()
+
+        data = json.loads(responseBody.decode('utf-8'))
         response.close()
         return data
 

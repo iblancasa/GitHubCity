@@ -6,24 +6,34 @@
 [![Dependency Status](https://gemnasium.com/badges/github.com/iblancasa/GitHubCity.svg)](https://gemnasium.com/github.com/iblancasa/GitHubCity)
 
 ## What is this?
+
 This is a small library which gets all GitHub users given a city. Original idea is [Top-GitHub-Users-Data](https://github.com/JJ/top-github-users-data) by [@JJ](https://github.com/JJ), an adaptation of [top-github-users](https://github.com/paulmillr/top-github-users) from [@paulmillr](https://github.com/paulmillr/).
 
 ## What I can do with this?
-Now, you only can get all user names from a city (with a city in the location field). In future, this will be an amazing library.
+
+This is an amazing Python library to study the GitHub community in a
+location. You can get all the GitHub users from a given location and
+obtain some data. For instance, you can generate one ranking
+like
+[this ranking with the users from Spain (and its provinces)](https://github.com/iblancasa/GitHubRankingsSpain). 
 
 ## What I need to run this?
+
 You will need to install Python 3. *Python 2 is not supported*.
 
-In addition, you will need to get ID and Secret from a GitHub application. [You can register your own application here!](https://github.com/settings/applications/new).
+In addition, you will need to get an ID and Secret for a GitHub
+application, [after registering your own application here!](https://github.com/settings/applications/new).
 
-#### Dependencies
-You have a ``requirements.txt`` file. Install all dependences with ``pip install -r requirements.txt``.
+### Dependencies
+
+There is a ``requirements.txt`` file included in this repo. Install all dependences with ``pip install -r requirements.txt``.
 
 ## How to install
 
 There are two options to install this library and its dependencies.
 
 ### Install from the source code
+
 You need to clone (or download) this repository. Then, go to ``src`` folder and run:
 ```shell
 python setup.py install
@@ -34,12 +44,16 @@ python setup.py install
 [This library is available to be installed using pip.](https://pypi.python.org/pypi?:action=display&name=githubcity)
 
 ```shell
-pip install github
+pip install githubcity
 ```
 
 
 ## Getting started
-#### Basic example
+
+[You can see one example about how to use this library here](https://github.com/iblancasa/GitHubSpanishRankingGenerator).
+
+### Basic example
+
 ```python
 idGH = os.environ.get('GH_ID')
 secretGH = os.environ.get('GH_SECRET')
@@ -65,8 +79,10 @@ ciudad.addFilter("followers", ">1")
 ciudad.getCityUsers()
 ```
 
-#### Excluding users
+### Excluding users
+
 You can generate a JSON file like this (each element is an user and this properties are name -login name of the user- and reason -why this user has been banned-):
+
 ```json
 [
   {
@@ -85,8 +101,7 @@ You can generate a JSON file like this (each element is an user and this propert
 ```
 
 
-
-### The MIT License (MIT)
+## The MIT License (MIT)
     Copyright (c) 2015-2017 Israel Blancas @iblancasa (http://iblancasa.com/)
 
     Permission is hereby granted, free of charge, to any person obtaining a copy of this software
