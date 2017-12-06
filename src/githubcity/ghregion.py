@@ -35,8 +35,8 @@ The MIT License (MIT)
 """
 
 from __future__ import absolute_import
-import json
-import pystache
+from json import load
+from pystache import Renderer, parse
 
 
 class GitHubRegion():
@@ -54,7 +54,7 @@ class GitHubRegion():
         :type fileName: str.
         """
         with open(fileName) as data_file:
-            data = json.load(data_file)
+            data = load(data_file)
         for u in data["users"]:
             if not any(d["name"] == u["name"] for d in self.__users):
                 self.__users.append(u)
@@ -86,7 +86,7 @@ class GitHubRegion():
 
         exportedData["extraData"] = data
 
-        renderer = pystache.Renderer()
+        renderer = Renderer()
         output = renderer.render(template, exportedData)
 
         with open(output_file_name, "w") as text_file:
@@ -105,7 +105,7 @@ class GitHubRegion():
         with open(template_file_name) as template_file:
             template_raw = template_file.read()
 
-        template = pystache.parse(template_raw)
+        template = parse(template_raw)
         return template
 
     def getSortedUsers(self, order="public"):
