@@ -504,22 +504,28 @@ class GitHubCity:
                 self.__logger.debug("Getting " + url)
                 response = urlopen(req)
                 code = response.code
-            except HTTPError as e:
-                if hasattr(e, "headers"):
-                    reset = int(e.headers("X-RateLimit-Reset"))
-                    if reset < 0:
-                        log_message = "Error when reading response. Wait: 30 secs"
-                        sleep_duration = 30
-                    else:
-                        utcAux = datetime.datetime.utcnow()
-                        utcAux = utcAux.utctimetuple()
-                        now_sec = timegm(utcAux)
-                        sleep_duration = reset - now_sec
-                        log_message = "Limit of API. Wait: "
-                        log_message += str(sleep_duration)
-                        log_message += " secs"
-                    self.__logger.warning(log_message)
-                    sleep(sleep_duration)
+            except HTTPError as error:
+                headers = error.headers.items()
+
+                reset = -1
+
+                for header in headers:
+                    if header[0] == "X-RateLimit-Reset":
+                        reset = int(header[1])
+
+                if reset < 0:
+                    log_message = "Error when reading response. Wait: 30 secs"
+                    sleep_duration = 30
+                else:
+                    utcAux = datetime.datetime.utcnow()
+                    utcAux = utcAux.utctimetuple()
+                    now_sec = timegm(utcAux)
+                    sleep_duration = reset - now_sec
+                    log_message = "Limit of API. Wait: "
+                    log_message += str(sleep_duration)
+                    log_message += " secs"
+                self.__logger.warning(log_message)
+                sleep(sleep_duration)
                 code = 0
             # pylint: disable=W0703
             except Exception as e:
