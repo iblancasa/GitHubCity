@@ -93,6 +93,7 @@ class GitHubUser:
         data["bio"] = self.bio
         data["private"] = self.private
         data["public"] = self.public
+        data["location"] = self.location
         return data
 
     @staticmethod
@@ -171,7 +172,7 @@ class GitHubUser:
         :param web: parsed web.
         :type web: BeautifulSoup node.
         """
-        self.location = web.find("li", {"itemprop": "homeLocation"}).text
+        self.location = web.find("span", {"class": "p-label"}).text
 
     def __getJoin(self, web):
         """Scrap the join date from a GitHub profile.
@@ -221,6 +222,7 @@ class GitHubUser:
 
         try:
             self.__getContributions(web)
+            self.__getLocation(web)
             self.__getAvatar(web)
             self.__getNumberOfRepositories(web)
             self.__getNumberOfFollowers(web)
