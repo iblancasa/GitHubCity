@@ -52,33 +52,6 @@ class ghcityTester(unittest.TestCase):
         """Test the creation of the class with its configuration."""
         pass
 
-    def test_getData(self):
-        # Given
-        with open("tests/resources/user.html") as userWeb:
-            reply = userWeb.read()
-
-        httpretty.enable()
-        httpretty.register_uri(httpretty.GET, "https://github.com/iblancasa",
-                               body=reply,
-                               content_type="text/html")
-
-        # When
-        user = GitHubUser("iblancasa")
-        user.getData()
-
-        # Then
-        self.assertEqual(user.numberOfRepos, 141)
-        self.assertEqual(user.bio, "")
-        self.assertEqual(user.private, 0)
-        self.assertEqual(user.public, 0)
-        self.assertEqual(user.contributions, 490)
-        self.assertEqual(user.name, "iblancasa")
-        self.assertEqual(user.join, "2013-06-24")
-        self.assertEqual(user.followers, 107)
-        self.assertEqual(user.organizations, 7)
-        self.assertEqual(user.avatar,
-                         "https://avatars0.githubusercontent.com/u/4806311")
-
     def test_getNumberOfRepos(self):
         """Test the private method getNumberOfRepos."""
         # Given
@@ -86,11 +59,9 @@ class ghcityTester(unittest.TestCase):
         with open("tests/resources/user.html") as userWeb:
             data = userWeb.read()
         web = BeautifulSoup(data, "lxml")
-
         # When
-        user = GitHubUser("vim-scripts")
+        user = GitHubUser("iblancasa")
         user._GitHubUser__getNumberOfRepositories(web)
-
         # Then
         self.assertEqual(user.numberOfRepos, 141)
 
@@ -104,11 +75,9 @@ class ghcityTester(unittest.TestCase):
         with open("tests/resources/userk.html") as userWeb:
             data = userWeb.read()
         web = BeautifulSoup(data, "lxml")
-
         # When
         user = GitHubUser("vim-scripts")
         user._GitHubUser__getNumberOfRepositories(web)
-
         # Then
         self.assertEqual(user.numberOfRepos, 5200)
 
@@ -119,11 +88,9 @@ class ghcityTester(unittest.TestCase):
         with open("tests/resources/user.html") as userWeb:
             data = userWeb.read()
         web = BeautifulSoup(data, "lxml")
-
         # When
-        user = GitHubUser("vim-scripts")
+        user = GitHubUser("iblancasa")
         user._GitHubUser__getNumberOfFollowers(web)
-
         # Then
         self.assertEqual(user.followers, 107)
 
@@ -136,18 +103,81 @@ class ghcityTester(unittest.TestCase):
         with open("tests/resources/userk.html") as userWeb:
             data = userWeb.read()
         web = BeautifulSoup(data, "lxml")
-
         # When
         user = GitHubUser("vim-scripts")
         user._GitHubUser__getNumberOfFollowers(web)
-
         # Then
         self.assertEqual(user.followers, 3800)
+
+    def test__getContributions(self):
+        """Test the private method getContributions."""
+        # Given
+        data = ""
+        with open("tests/resources/user.html") as userWeb:
+            data = userWeb.read()
+        web = BeautifulSoup(data, "lxml")
+        # When
+        user = GitHubUser("iblancasa")
+        user._GitHubUser__getContributions(web)
+        # Then
+        self.assertEqual(user.contributions, 490)
+
+    def test__getAvatar(self):
+        """Test the private method getAvatar."""
+        # Given
+        data = ""
+        with open("tests/resources/user.html") as userWeb:
+            data = userWeb.read()
+        web = BeautifulSoup(data, "lxml")
+        # When
+        user = GitHubUser("iblancasa")
+        user._GitHubUser__getAvatar(web)
+        # Then
+        self.assertEqual(user.avatar,
+                         "https://avatars0.githubusercontent.com/u/4806311")
+
+    def test__getLocation(self):
+        """Test the private method getLocation."""
+        # Given
+        data = ""
+        with open("tests/resources/user.html") as userWeb:
+            data = userWeb.read()
+        web = BeautifulSoup(data, "lxml")
+        # When
+        user = GitHubUser("iblancasa")
+        user._GitHubUser__getLocation(web)
+        # Then
+        self.assertEqual(user.location, "Granada, Andalucía, Spain")
+
+    def test__getBio(self):
+        """Test the private method getBio."""
+        # Given
+        data = ""
+        with open("tests/resources/user.html") as userWeb:
+            data = userWeb.read()
+        web = BeautifulSoup(data, "lxml")
+        # When
+        user = GitHubUser("iblancasa")
+        user._GitHubUser__getBio(web)
+        # Then
+        self.assertEqual(user.bio, "This is my bio.")
+
+    def test__getOrganizations(self):
+        """Test the private method getOrganizations."""
+        # Given
+        data = ""
+        with open("tests/resources/user.html") as userWeb:
+            data = userWeb.read()
+        web = BeautifulSoup(data, "lxml")
+        # When
+        user = GitHubUser("iblancasa")
+        user._GitHubUser__getOrganizations(web)
+        # Then
+        self.assertEqual(user.organizations, 7)
 
     def test_export(self):
         # Given
         user = GitHubUser("iblancasa")
-
         user.numberOfRepos = 141
         user.bio = ""
         user.private = 0
@@ -159,8 +189,6 @@ class ghcityTester(unittest.TestCase):
         user.followers = 107
         user.organizations = 7
         user.avatar = "https://avatars0.githubusercontent.com/u/4806311"
-
-
         # When
         exportedUser = {'name': 'iblancasa',
                         'bio': '',
@@ -175,9 +203,32 @@ class ghcityTester(unittest.TestCase):
                         'repositories': 141,
                         'followers': 107
                         }
-
         # Then
         self.assertEqual(user.export(), exportedUser)
+
+    def test_getData(self):
+        # Given
+        with open("tests/resources/user.html") as userWeb:
+            reply = userWeb.read()
+        httpretty.enable()
+        httpretty.register_uri(httpretty.GET, "https://github.com/iblancasa",
+                               body=reply,
+                               content_type="text/html")
+        # When
+        user = GitHubUser("iblancasa")
+        user.getData()
+        # Then
+        self.assertEqual(user.numberOfRepos, 141)
+        self.assertEqual(user.bio, "This is my bio.")
+        self.assertEqual(user.private, 0)
+        self.assertEqual(user.public, 0)
+        self.assertEqual(user.contributions, 490)
+        self.assertEqual(user.name, "iblancasa")
+        self.assertEqual(user.join, "2013-06-24")
+        self.assertEqual(user.followers, 107)
+        self.assertEqual(user.organizations, 7)
+        self.assertEqual(user.avatar,
+                         "https://avatars0.githubusercontent.com/u/4806311")
 
 if __name__ == "__main__":
     unittest.main()
