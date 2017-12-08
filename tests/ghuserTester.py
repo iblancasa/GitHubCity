@@ -202,9 +202,43 @@ class ghcityTester(unittest.TestCase):
                             'https://avatars0.githubusercontent.com/u/4806311',
                         'repositories': 141,
                         'followers': 107
-                        }
+                       }
         # Then
         self.assertEqual(user.export(), exportedUser)
+
+    def test_getRealContributions(self):
+        # Given
+        with open("tests/resources/user.html") as userWeb:
+            reply = userWeb.read()
+        httpretty.enable()
+        httpretty.register_uri(httpretty.GET, "https://github.com/iblancasa",
+                               body=reply,
+                               content_type="text/html")
+        # When
+        user = GitHubUser("iblancasa")
+        user.contributions = 490
+        user.getRealContributions()
+        # Then
+        self.assertEqual(user.public, 490)
+        self.assertEqual(user.private, 0)
+
+        # Given
+        with open("tests/resources/userprivate.html") as userWeb:
+            reply = userWeb.read()
+        httpretty.enable()
+        httpretty.register_uri(httpretty.GET, "https://github.com/privateuser",
+                               body=reply,
+                               content_type="text/html")
+        # When
+        user = GitHubUser("privateuser")
+        user.contributions = 2026
+        user.getRealContributions()
+        # Then
+        self.assertEqual(user.public, 1116)
+        self.assertEqual(user.private, 910)
+
+        httpretty.disable()
+        httpretty.reset()
 
     def test_getData(self):
         # Given
@@ -229,6 +263,8 @@ class ghcityTester(unittest.TestCase):
         self.assertEqual(user.organizations, 7)
         self.assertEqual(user.avatar,
                          "https://avatars0.githubusercontent.com/u/4806311")
+        httpretty.disable()
+        httpretty.reset()
 
 if __name__ == "__main__":
     unittest.main()
