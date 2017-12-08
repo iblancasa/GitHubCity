@@ -101,7 +101,7 @@ class ghcityTester(unittest.TestCase):
         """
         # Given
         data = ""
-        with open("tests/resources/userkrepositories.html") as userWeb:
+        with open("tests/resources/userk.html") as userWeb:
             data = userWeb.read()
         web = BeautifulSoup(data, "lxml")
 
@@ -111,6 +111,38 @@ class ghcityTester(unittest.TestCase):
 
         # Then
         self.assertEqual(user.numberOfRepos, 5200)
+
+    def test_getNumberOfFollowers(self):
+        """Test the private method getNumberOfFollowers."""
+        # Given
+        data = ""
+        with open("tests/resources/user.html") as userWeb:
+            data = userWeb.read()
+        web = BeautifulSoup(data, "lxml")
+
+        # When
+        user = GitHubUser("vim-scripts")
+        user._GitHubUser__getNumberOfFollowers(web)
+
+        # Then
+        self.assertEqual(user.followers, 107)
+
+    def test_getNumberOfFollowersk(self):
+        """Test the private method getNumberOfFollowers for k followers.
+
+        This happens when the number of followers is more than 1000."""
+        # Given
+        data = ""
+        with open("tests/resources/userk.html") as userWeb:
+            data = userWeb.read()
+        web = BeautifulSoup(data, "lxml")
+
+        # When
+        user = GitHubUser("vim-scripts")
+        user._GitHubUser__getNumberOfFollowers(web)
+
+        # Then
+        self.assertEqual(user.followers, 3800)
 
     def test_export(self):
         # Given
