@@ -65,11 +65,6 @@ class ghcityTester(unittest.TestCase):
         # Then
         self.assertEqual(user.numberOfRepos, 141)
 
-    def test_getNumberOfReposK(self):
-        """Test the private method getNumberOfRepos for k repositories.
-
-        This happens when the number of repositories is more than 1000.
-        """
         # Given
         data = ""
         with open("tests/resources/userk.html") as userWeb:
@@ -80,6 +75,7 @@ class ghcityTester(unittest.TestCase):
         user._GitHubUser__getNumberOfRepositories(web)
         # Then
         self.assertEqual(user.numberOfRepos, 5200)
+
 
     def test_getNumberOfFollowers(self):
         """Test the private method getNumberOfFollowers."""
@@ -94,10 +90,6 @@ class ghcityTester(unittest.TestCase):
         # Then
         self.assertEqual(user.followers, 107)
 
-    def test_getNumberOfFollowersk(self):
-        """Test the private method getNumberOfFollowers for k followers.
-
-        This happens when the number of followers is more than 1000."""
         # Given
         data = ""
         with open("tests/resources/userk.html") as userWeb:
