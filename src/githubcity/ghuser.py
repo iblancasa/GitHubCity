@@ -115,9 +115,17 @@ class GitHubUser:
         """
         contributions_raw = web.find_all('h2',
                                          {'class': 'f4 text-normal mb-2'})
-        contrText = contributions_raw[0].text
-        contrText = contrText.lstrip().split(" ")[0]
-        contrText = contrText.replace(",", "")
+        try:
+            contrText = contributions_raw[0].text
+            contrText = contrText.lstrip().split(" ")[0]
+            contrText = contrText.replace(",", "")
+        except IndexError as error:
+            print("There was an error with the user " + self.name)
+            print(error)
+        except AttributeError as error:
+            print("There was an error with the user " + self.name)
+            print(error)
+
         self.contributions = int(contrText)
 
     def __getAvatar(self, web):
@@ -126,7 +134,14 @@ class GitHubUser:
         :param web: parsed web.
         :type web: BeautifulSoup node.
         """
-        self.avatar = web.find("img", {"class": "avatar"})['src'][:-10]
+        try:
+            self.avatar = web.find("img", {"class": "avatar"})['src'][:-10]
+        except IndexError as error:
+            print("There was an error with the user " + self.name)
+            print(error)
+        except AttributeError as error:
+            print("There was an error with the user " + self.name)
+            print(error)
 
     def __getNumberOfRepositories(self, web):
         """Scrap the number of repositories from a GitHub profile.
@@ -135,17 +150,24 @@ class GitHubUser:
         :type web: BeautifulSoup node.
         """
         counters = web.find_all('span', {'class': 'Counter'})
-        if 'k' not in counters[0].text:
-            self.numberOfRepos = int(counters[0].text)
-        else:
-            reposText = counters[0].text.replace(" ", "")
-            reposText = reposText.replace("\n", "").replace("k", "")
+        try:
+            if 'k' not in counters[0].text:
+                self.numberOfRepos = int(counters[0].text)
+            else:
+                reposText = counters[0].text.replace(" ", "")
+                reposText = reposText.replace("\n", "").replace("k", "")
 
-            if reposText and len(reposText) > 1:
-                self.numberOfRepos = int(reposText.split(".")[0]) * 1000 + \
-                    int(reposText.split(".")[1]) * 100
-            elif reposText:
-                self.numberOfRepos = int(reposText.split(".")[0]) * 1000
+                if reposText and len(reposText) > 1:
+                    self.numberOfRepos = int(reposText.split(".")[0]) * \
+                        1000 + int(reposText.split(".")[1]) * 100
+                elif reposText:
+                    self.numberOfRepos = int(reposText.split(".")[0]) * 1000
+        except IndexError as error:
+            print("There was an error with the user " + self.name)
+            print(error)
+        except AttributeError as error:
+            print("There was an error with the user " + self.name)
+            print(error)
 
     def __getNumberOfFollowers(self, web):
         """Scrap the number of followers from a GitHub profile.
@@ -154,17 +176,24 @@ class GitHubUser:
         :type web: BeautifulSoup node.
         """
         counters = web.find_all('span', {'class': 'Counter'})
-        if 'k' not in counters[2].text:
-            self.followers = int(counters[2].text)
-        else:
-            follText = counters[2].text.replace(" ", "")
-            follText = follText.replace("\n", "").replace("k", "")
+        try:
+            if 'k' not in counters[2].text:
+                self.followers = int(counters[2].text)
+            else:
+                follText = counters[2].text.replace(" ", "")
+                follText = follText.replace("\n", "").replace("k", "")
 
-            if follText and len(follText) > 1:
-                self.followers = int(follText.split(".")[0])*1000 + \
-                    int(follText.split(".")[1]) * 100
-            elif follText:
-                self.followers = int(follText.split(".")[0])*1000
+                if follText and len(follText) > 1:
+                    self.followers = int(follText.split(".")[0])*1000 + \
+                        int(follText.split(".")[1]) * 100
+                elif follText:
+                    self.followers = int(follText.split(".")[0])*1000
+        except IndexError as error:
+            print("There was an error with the user " + self.name)
+            print(error)
+        except AttributeError as error:
+            print("There was an error with the user " + self.name)
+            print(error)
 
     def __getLocation(self, web):
         """Scrap the location from a GitHub profile.
@@ -172,7 +201,11 @@ class GitHubUser:
         :param web: parsed web.
         :type web: BeautifulSoup node.
         """
-        self.location = web.find("span", {"class": "p-label"}).text
+        try:
+            self.location = web.find("span", {"class": "p-label"}).text
+        except AttributeError as error:
+            print("There was an error with the user " + self.name)
+            print(error)
 
     def __getJoin(self, web):
         """Scrap the join date from a GitHub profile.
@@ -182,8 +215,15 @@ class GitHubUser:
         """
         join = web.findAll("a", {"class": "dropdown-item"})
         for j in join:
-            if "Joined GitHub" in j.text:
-                self.join = j["href"][-10:]
+            try:
+                if "Joined GitHub" in j.text:
+                    self.join = j["href"][-10:]
+            except IndexError as error:
+                print("There was an error with the user " + self.name)
+                print(error)
+            except AttributeError as error:
+                print("There was an error with the user " + self.name)
+                print(error)
 
     def __getBio(self, web):
         """Scrap the bio from a GitHub profile.
@@ -194,15 +234,21 @@ class GitHubUser:
         bio = web.find_all("div", {"class": "user-profile-bio"})
 
         if bio:
-            bio = bio[0].text
-            if bio and GitHubUser.isASCII(bio):
-                bioText = bio.replace("\n", "")
-                bioText = bioText.replace("\t", " ").replace("\"", "")
-                bioText = bioText.replace("\'", "")
-                bioText = bioText.replace("\\", "")
-                self.bio = bioText
-            else:
-                self.bio = ""
+            try:
+                bio = bio[0].text
+                if bio and GitHubUser.isASCII(bio):
+                    bioText = bio.replace("\n", "")
+                    bioText = bioText.replace("\t", " ").replace("\"", "")
+                    bioText = bioText.replace("\'", "").replace("\\", "")
+                    self.bio = bioText
+                else:
+                    self.bio = ""
+            except IndexError as error:
+                print("There was an error with the user " + self.name)
+                print(error)
+            except AttributeError as error:
+                print("There was an error with the user " + self.name)
+                print(error)
 
     def __getOrganizations(self, web):
         """Scrap the number of organizations from a GitHub profile.
@@ -217,21 +263,15 @@ class GitHubUser:
         """Get data of the GitHub user."""
         url = self.server + self.name
         data = GitHubUser.__getDataFromURL(url)
-
         web = BeautifulSoup(data, "lxml")
-
-        try:
-            self.__getContributions(web)
-            self.__getLocation(web)
-            self.__getAvatar(web)
-            self.__getNumberOfRepositories(web)
-            self.__getNumberOfFollowers(web)
-            self.__getBio(web)
-            self.__getJoin(web)
-            self.__getOrganizations(web)
-        except Exception as e:
-            print("Error in user " + self.name)
-            print(e)
+        self.__getContributions(web)
+        self.__getLocation(web)
+        self.__getAvatar(web)
+        self.__getNumberOfRepositories(web)
+        self.__getNumberOfFollowers(web)
+        self.__getBio(web)
+        self.__getJoin(web)
+        self.__getOrganizations(web)
 
     def getRealContributions(self):
         """Get the real number of contributions (private + public)."""
@@ -259,14 +299,21 @@ class GitHubUser:
                 if "had no activity during this period." in compr.text:
                     noContribs = True
 
-            if not noContribs:
-                for contrib in pcontribs:
-                    contribution = None
-                    contribution = contrib.text
-                    contribution = contribution.lstrip().replace(",", "")
-                    contribution = contribution.replace("\n", " ")
-                    contribution = contribution.partition(" ")[0]
-                    private += int(contribution)
+            try:
+                if not noContribs:
+                    for contrib in pcontribs:
+                        contribution = None
+                        contribution = contrib.text
+                        contribution = contribution.lstrip().replace(",", "")
+                        contribution = contribution.replace("\n", " ")
+                        contribution = contribution.partition(" ")[0]
+                        private += int(contribution)
+            except IndexError as error:
+                print("There was an error with the user " + self.name)
+                print(error)
+            except AttributeError as error:
+                print("There was an error with the user " + self.name)
+                print(error)
 
             datefrom += relativedelta(months=1)
             dateto += relativedelta(months=1)
@@ -301,11 +348,11 @@ class GitHubUser:
                 response = urlopen(req)
                 code = response.code
                 sleep(0.01)
-            except HTTPError as e:
-                code = e.code
+            except HTTPError as error:
+                code = error.code
                 if code == 404:
                     break
-            except URLError as e:
+            except URLError as error:
                 sleep(3)
 
         if code == 404:
