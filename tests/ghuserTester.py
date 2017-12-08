@@ -39,6 +39,7 @@ import sys
 import os
 import unittest
 import httpretty
+from bs4 import BeautifulSoup
 sys.path.append(os.path.join(os.path.dirname(sys.path[0]), 'src'))
 print(os.path.join(os.path.dirname(sys.path[0]), 'src'))
 from githubcity.ghuser import GitHubUser
@@ -78,8 +79,41 @@ class ghcityTester(unittest.TestCase):
         self.assertEqual(user.avatar,
                          "https://avatars0.githubusercontent.com/u/4806311")
 
-    def test_export(self):
+    def test_getNumberOfRepos(self):
+        """Test the private method getNumberOfRepos."""
+        # Given
+        data = ""
+        with open("tests/resources/user.html") as userWeb:
+            data = userWeb.read()
+        web = BeautifulSoup(data, "lxml")
+
         # When
+        user = GitHubUser("vim-scripts")
+        user._GitHubUser__getNumberOfRepositories(web)
+
+        # Then
+        self.assertEqual(user.numberOfRepos, 141)
+
+    def test_getNumberOfReposK(self):
+        """Test the private method getNumberOfRepos for k repositories.
+
+        This happens when the number of repositories is more than 1000.
+        """
+        # Given
+        data = ""
+        with open("tests/resources/userkrepositories.html") as userWeb:
+            data = userWeb.read()
+        web = BeautifulSoup(data, "lxml")
+
+        # When
+        user = GitHubUser("vim-scripts")
+        user._GitHubUser__getNumberOfRepositories(web)
+
+        # Then
+        self.assertEqual(user.numberOfRepos, 5200)
+
+    def test_export(self):
+        # Given
         user = GitHubUser("iblancasa")
 
         user.numberOfRepos = 141
@@ -95,7 +129,7 @@ class ghcityTester(unittest.TestCase):
         user.avatar = "https://avatars0.githubusercontent.com/u/4806311"
 
 
-        # Given
+        # When
         exportedUser = {'name': 'iblancasa',
                         'bio': '',
                         'join': '2013-06-24',
