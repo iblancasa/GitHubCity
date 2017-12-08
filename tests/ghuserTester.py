@@ -78,6 +78,40 @@ class ghcityTester(unittest.TestCase):
         self.assertEqual(user.avatar,
                          "https://avatars0.githubusercontent.com/u/4806311")
 
+    def test_export(self):
+        # When
+        user = GitHubUser("iblancasa")
+
+        user.numberOfRepos = 141
+        user.bio = ""
+        user.private = 0
+        user.public = 0
+        user.location = 'Granada, Andalucía, Spain'
+        user.contributions = 490
+        user.name = "iblancasa"
+        user.join = "2013-06-24"
+        user.followers = 107
+        user.organizations = 7
+        user.avatar = "https://avatars0.githubusercontent.com/u/4806311"
+
+
+        # Given
+        exportedUser = {'name': 'iblancasa',
+                        'bio': '',
+                        'join': '2013-06-24',
+                        'organizations': 7,
+                        'private': 0,
+                        'contributions':490,
+                        'public': 0,
+                        'location': 'Granada, Andalucía, Spain',
+                        'avatar':
+                            'https://avatars0.githubusercontent.com/u/4806311',
+                        'repositories': 141,
+                        'followers': 107
+                        }
+
+        # Then
+        self.assertEqual(user.export(), exportedUser)
 
 if __name__ == "__main__":
     unittest.main()
