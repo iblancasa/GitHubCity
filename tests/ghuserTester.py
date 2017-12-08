@@ -53,7 +53,7 @@ class ghcityTester(unittest.TestCase):
 
     def test_getData(self):
         # Given
-        with open("resources/user.html") as userWeb:
+        with open("tests/resources/user.html") as userWeb:
             reply = userWeb.read()
 
         httpretty.enable()

@@ -1,9 +1,10 @@
 # GitHubCity
 
 [![Build Status](https://travis-ci.org/iblancasa/GitHubCity.svg?branch=master)](https://travis-ci.org/iblancasa/GitHubCity)
-[![GitHub license](https://img.shields.io/github/license/iblancasa/GitHubCity.svg)](https://github.com/iblancasa/GitHubCity)[![Coverage Status](https://coveralls.io/repos/iblancasa/GitHubCity/badge.svg?branch=master&service=github)](https://coveralls.io/github/iblancasa/GitHubCity?branch=master)
+[![CodeCov](https://codecov.io/gh/iblancasa/GitHubCity/branch/master/graph/badge.svg)](https://codecov.io/gh/iblancasa/GitHubCity)
 [![Known Vulnerabilities](https://snyk.io/test/github/iblancasa/githubcity/badge.svg)](https://snyk.io/test/github/iblancasa/githubcity)
 [![Dependency Status](https://gemnasium.com/badges/github.com/iblancasa/GitHubCity.svg)](https://gemnasium.com/github.com/iblancasa/GitHubCity)
+[![GitHub license](https://img.shields.io/github/license/iblancasa/GitHubCity.svg)](https://github.com/iblancasa/GitHubCity)
 
 ## What is this?
 
