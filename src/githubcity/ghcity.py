@@ -37,7 +37,7 @@ The MIT License (MIT)
 from __future__ import absolute_import
 from urllib.request import Request, urlopen
 from urllib.parse import quote
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from threading import Lock, Thread
 from calendar import timegm
 from queue import Queue, Empty
@@ -505,14 +505,15 @@ class GitHubCity:
                 response = urlopen(req)
                 code = response.code
             except HTTPError as error:
+                if error.code == 404:
+                    self.__logger.exception("_readAPI: ERROR 404")
+                    self.__logger.exception(str(error))
+                    break
                 headers = error.headers.items()
-
                 reset = -1
-
                 for header in headers:
                     if header[0] == "X-RateLimit-Reset":
                         reset = int(header[1])
-
                 if reset < 0:
                     log_message = "Error when reading response. Wait: 30 secs"
                     sleep_duration = 30
@@ -527,12 +528,10 @@ class GitHubCity:
                 self.__logger.warning(log_message)
                 sleep(sleep_duration)
                 code = 0
-            # pylint: disable=W0703
-            except Exception as e:
-                self.__logger.exception(str(e))
-                self.__logger.exception("_readAPI: waiting 10 secs")
-                sleep(10)
-
+            except URLError as error:
+                self.__logger.exception(str(error))
+                self.__logger.exception("_readAPI: waiting 15 secs")
+                sleep(15)
         responseBody = response.read()
 
         if response.getheader('Content-Encoding') == 'gzip':
