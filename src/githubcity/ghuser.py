@@ -282,7 +282,7 @@ class GitHubUser:
         while datefrom < datetime.now():
             fromstr = datefrom.strftime("%Y-%m-%d")
             tostr = dateto.strftime("%Y-%m-%d")
-            url = "https://github.com/" + self.name
+            url = self.server + self.name
             url += "?tab=overview&from=" + fromstr + "&to=" + tostr
 
             data = GitHubUser.__getDataFromURL(url)
