@@ -88,19 +88,19 @@ class GitHubCity:
             raise Exception("init: No GitHub Secret inserted")
         self.__githubSecret = githubSecret
 
-        self.__names = Queue()
+        self.__usersToProccess = Queue()
         self.__urlLocations = ""
         self.__urlFilters = ""
-        self.__myusers = set()
-        self.__dataUsers = []
+        self.__cityUsers = set()
+        self.__processedUsers = []
         self.__threads = set()
-        self.__fin = False
+        self.__end = False
         self.__lastDay = False
         self.__lockGetUser = Lock()
         self.__lockReadAddUser = Lock()
         self.__server = "https://api.github.com/"
         self.__intervals = []
-        self.__excluded = []
+        self.__excludedUsers= []
         self.__excludedLocations = []
 
         if configuration:
@@ -137,14 +137,14 @@ class GitHubCity:
             self.__addLocationsToURL(self.__locations)
 
         if "excludedUsers" in configuration:
-            self.__excluded = set()
+            self.__excludedUsers= set()
             self.__excludedLocations = set()
 
             excluded = configuration["excludedUsers"]
             for e in excluded:
-                self.__excluded.add(e)
+                self.__excludedUsers.add(e)
             self.__logger.debug("Excluded users " +
-                                str(self.__excluded))
+                                str(self.__excludedUsers))
 
         if "excludedLocations" in configuration:
             excluded = configuration["excludedLocations"]
@@ -188,7 +188,7 @@ class GitHubCity:
         config["excludedUsers"] = []
         config["excludedLocations"] = []
 
-        for e in self.__excluded:
+        for e in self.__excludedUsers:
             config["excludedUsers"].append(e)
 
         for e in self.__excludedLocations:
@@ -217,13 +217,13 @@ class GitHubCity:
 
     def __processUsers(self):
         """Process users of the queue."""
-        while self.__names.empty() and not self.__fin:
+        while self.__usersToProccess.empty() and not self.__end:
             pass
 
-        while not self.__fin or not self.__names.empty():
+        while not self.__end or not self.__usersToProccess.empty():
             self.__lockGetUser.acquire()
             try:
-                new_user = self.__names.get(False)
+                new_user = self.__usersToProccess.get(False)
             except Empty:
                 self.__lockGetUser.release()
                 return
@@ -231,7 +231,7 @@ class GitHubCity:
                 self.__lockGetUser.release()
                 self.__addUser(new_user)
                 self.__logger.info("__processUsers:" +
-                                   str(self.__names.qsize()) +
+                                   str(self.__usersToProccess.qsize()) +
                                    " users to  process")
 
     def __addUser(self, new_user):
@@ -242,11 +242,11 @@ class GitHubCity:
         :type new_user: str.
         """
         self.__lockReadAddUser.acquire()
-        if new_user not in self.__myusers and \
-                new_user not in self.__excluded:
+        if new_user not in self.__cityUsers and \
+                new_user not in self.__excludedUsers:
             self.__lockReadAddUser.release()
             self.__logger.debug("__addUser: Adding " + new_user)
-            self.__myusers.add(new_user)
+            self.__cityUsers.add(new_user)
 
             myNewUser = GitHubUser(new_user)
             myNewUser.getData()
@@ -254,7 +254,7 @@ class GitHubCity:
 
             userLoc = myNewUser.location
             if not any(s in userLoc for s in self.__excludedLocations):
-                self.__dataUsers.append(myNewUser)
+                self.__processedUsers.append(myNewUser)
         else:
             self.__logger.debug("__addUser: Excluding " + new_user)
             self.__lockReadAddUser.release()
@@ -286,7 +286,7 @@ class GitHubCity:
                                 " users found")
             for u in data['items']:
                 users.append(u["login"])
-                self.__names.put(u["login"])
+                self.__usersToProccess.put(u["login"])
             total_count = data["total_count"]
             total_pages = int(total_count / 100) + 1
             page += 1
@@ -302,7 +302,7 @@ class GitHubCity:
             self.__logger.debug("Calculating best intervals")
             self.calculateBestIntervals()
 
-        self.__fin = False
+        self.__end = False
         self.__threads = set()
 
         comprobationURL = self.__getURL()
@@ -313,7 +313,7 @@ class GitHubCity:
         for i in self.__intervals:
             self.__getPeriodUsers(i[0], i[1])
 
-        self.__fin = True
+        self.__end = True
 
         for t in self.__threads:
             t.join()
@@ -410,10 +410,10 @@ class GitHubCity:
         :rtype: str.
         """
         try:
-            self.__dataUsers.sort(key=lambda u: getattr(u, order), reverse=True)
+            self.__processedUsers.sort(key=lambda u: getattr(u, order), reverse=True)
         except AttributeError:
             pass
-        return self.__dataUsers
+        return self.__processedUsers
 
     def __exportUsers(self, sort, limit=0):
         """Export the users to a dictionary.
