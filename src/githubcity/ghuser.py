@@ -335,15 +335,8 @@ class GitHubUser:
         """
         code = 0
 
-        hdr = {'User-Agent': 'curl/7.43.0 (x86_64-ubuntu) \
-        libcurl/7.43.0 OpenSSL/1.0.1k zlib/1.2.8 gh-rankings-grx',
-               'Accept': 'text/html',
-               'Pragma': 'no-cache',
-               'Connection': 'keep-alive',
-               'X-PJAX': 'true'}
-
         while code != 200:
-            req = Request(url, headers=hdr)
+            req = Request(url)
             try:
                 response = urlopen(req)
                 code = response.code
