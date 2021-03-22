@@ -47,7 +47,7 @@ setup(
     install_requires=[
         'python-dateutil==2.4.2',
         'beautifulsoup4==4.6.0',
-        'lxml==4.1.1',
+        'lxml==4.6.3',
         'coloredlogs==5.0',
         'pystache==0.5.4',
         'httpretty==0.8.14'
